@@ -16,15 +16,27 @@ find_package(GLEW REQUIRED)
 # Find GLFW
 find_package(glfw3 REQUIRED)
 
-# Include directories for OpenGL, GLEW, GLFW, and FFmpeg
+# Include directories for OpenGL, GLEW, GLFW, and ImGui
 include_directories(
     ${OPENGL_INCLUDE_DIRS}
     ${GLEW_INCLUDE_DIRS}
     ${GLFW_INCLUDE_DIRS}
+    imgui
+)
+
+# Add ImGui source files
+set(IMGUI_SRC
+    imgui/imgui.cpp
+    imgui/imgui_draw.cpp
+    imgui/imgui_tables.cpp
+    imgui/imgui_widgets.cpp
+    imgui/imgui_demo.cpp
+    imgui/imgui_impl_glfw.cpp
+    imgui/imgui_impl_opengl3.cpp
 )
 
 # Create the executable
-add_executable(proj main.cpp)
+add_executable(proj main.cpp ${IMGUI_SRC})
 
 # Link the necessary libraries
 target_link_libraries(proj
