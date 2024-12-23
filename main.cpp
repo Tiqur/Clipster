@@ -9,6 +9,10 @@
 
 const int DEBUG = false;
 
+// This will be dynamic to video dimensions
+// Will also create black bars if window size doesn't conform
+const float ASPECT_RATIO = 0.5625;
+
 // Callback to handle window resizing
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
@@ -63,6 +67,7 @@ int main() {
     window_flags |= ImGuiWindowFlags_NoMove;
     window_flags |= ImGuiWindowFlags_NoResize;
     window_flags |= ImGuiWindowFlags_NoCollapse;
+    window_flags |= ImGuiWindowFlags_NoTitleBar;
     static bool p_open = false;
 
     // Main render loop
@@ -83,26 +88,53 @@ int main() {
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
             glfwSetWindowShouldClose(window, true);
 
-        // ImGui
-        ImGui::SetNextWindowPos(ImVec2(0, 0));
-        ImGui::SetNextWindowSize(ImVec2(std::min(std::max((int)(width*0.2), 200), 400), height));
-        ImGui::Begin("ImGUI Window", &p_open, window_flags);
-        ImGui::Text("Clips");
+        // Toolbar
+        ImGui::BeginMainMenuBar();
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("New")) {
+            }
+            if (ImGui::MenuItem("Open")) {
+            }
+            if (ImGui::MenuItem("Save")) {
+            }
+            ImGui::EndMenu();
+        }
+        // Edit menu
+        if (ImGui::BeginMenu("Edit")) {
+            if (ImGui::MenuItem("Undo")) {
+            }
+            if (ImGui::MenuItem("Redo")) {
+            }
+            ImGui::EndMenu();
+        }
+        // Help menu
+        if (ImGui::BeginMenu("Help")) {
+            if (ImGui::MenuItem("About")) {
+            }
+            ImGui::EndMenu();
+        }
+        int toolbarHeight = ImGui::GetWindowSize()[1];
+        ImGui::EndMainMenuBar();
 
-        ImGui::SeparatorText("Clips");
-
-        if (ImGui::Button("Export All"))
-          std::cout << "[INFO]: Export All" << std::endl;
-
-        ImGui::SeparatorText("More");
-
-        ImGui::End();
-
+        // Debug
         if (DEBUG) {
           ImGui::ShowMetricsWindow();
           ImGui::ShowDebugLogWindow();
           ImGui::ShowDemoWindow();
         }
+
+        // Sidebar
+        ImGui::SetNextWindowPos(ImVec2(0, toolbarHeight));
+        ImGui::SetNextWindowSize(ImVec2(std::min(std::max((int)(width*0.2), 200), 400), height-toolbarHeight));
+        ImGui::Begin("ImGUI Window", &p_open, window_flags);
+        ImGui::Text("Clips");
+        ImGui::SeparatorText("Clips");
+        if (ImGui::Button("Export All"))
+          std::cout << "[INFO]: Export All" << std::endl;
+        ImGui::SeparatorText("More");
+        ImGui::End();
+
+
 
         // Renders the ImGUI elements
         ImGui::Render();
