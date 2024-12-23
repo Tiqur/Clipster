@@ -6,6 +6,9 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 
+
+const int DEBUG = false;
+
 // Callback to handle window resizing
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
@@ -55,8 +58,18 @@ int main() {
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
 
+    ImGuiWindowFlags window_flags = 0;
+    window_flags |= ImGuiWindowFlags_NoScrollbar;
+    window_flags |= ImGuiWindowFlags_NoMove;
+    window_flags |= ImGuiWindowFlags_NoResize;
+    window_flags |= ImGuiWindowFlags_NoCollapse;
+    static bool p_open = false;
+
     // Main render loop
     while (!glfwWindowShouldClose(window)) {
+        int width, height;
+        glfwGetWindowSize(window, &width, &height);
+
         // Render
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -71,9 +84,25 @@ int main() {
             glfwSetWindowShouldClose(window, true);
 
         // ImGui
-        ImGui::Begin("ImGUI Window");
-        ImGui::Text("Hello");
+        ImGui::SetNextWindowPos(ImVec2(0, 0));
+        ImGui::SetNextWindowSize(ImVec2(std::min(std::max((int)(width*0.2), 200), 400), height));
+        ImGui::Begin("ImGUI Window", &p_open, window_flags);
+        ImGui::Text("Clips");
+
+        ImGui::SeparatorText("Clips");
+
+        if (ImGui::Button("Export All"))
+          std::cout << "[INFO]: Export All" << std::endl;
+
+        ImGui::SeparatorText("More");
+
         ImGui::End();
+
+        if (DEBUG) {
+          ImGui::ShowMetricsWindow();
+          ImGui::ShowDebugLogWindow();
+          ImGui::ShowDemoWindow();
+        }
 
         // Renders the ImGUI elements
         ImGui::Render();
