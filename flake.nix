@@ -12,7 +12,6 @@
         glfw3
         pkg-config
         ffmpeg
-
       ];
     };
   };
