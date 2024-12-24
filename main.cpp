@@ -12,10 +12,6 @@
 
 const int DEBUG = true;
 
-// This will be dynamic to video dimensions
-// Will also create black bars if window size doesn't conform
-const float ASPECT_RATIO = 16.0f/9.0f;
-
 // Vertex Shader source code
 const char* vertexShaderSource = "#version 330 core\n"
 "layout (location = 0) in vec3 aPos;\n"
@@ -56,7 +52,7 @@ int main() {
       return -1;
     }
 
-    const float ASPECT_RATIO = (float)frame_width / frame_height;
+    const float aspect_ratio = (float)frame_width / frame_height;
 
 
     // Initialize GLFW
@@ -265,12 +261,12 @@ int main() {
 
         // Maintain aspect ratio
         float screenWidth, screenHeight;
-        if ((float)availableWidth/availableHeight > ASPECT_RATIO) {
+        if ((float)availableWidth/availableHeight > aspect_ratio) {
           screenHeight = availableHeight;
-          screenWidth = availableHeight * ASPECT_RATIO;
+          screenWidth = availableHeight * aspect_ratio;
         } else {
           screenWidth = availableWidth;
-          screenHeight = availableWidth / ASPECT_RATIO;
+          screenHeight = availableWidth / aspect_ratio;
         }
 
         float centerX = sideBarWidth + (availableWidth - screenWidth) / 2.0f;
