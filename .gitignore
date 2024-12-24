@@ -33,3 +33,6 @@
 
 build/
 imgui.ini
+
+.idea/
+cmake-build-debug/
