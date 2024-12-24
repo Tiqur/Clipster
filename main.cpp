@@ -12,7 +12,7 @@ const int DEBUG = false;
 
 // This will be dynamic to video dimensions
 // Will also create black bars if window size doesn't conform
-const float ASPECT_RATIO = 0.5625;
+const float ASPECT_RATIO = 16.0f/9.0f;
 
 // Vertex Shader source code
 const char* vertexShaderSource = "#version 330 core\n"
@@ -55,6 +55,14 @@ int main() {
     // Initialize vertices
     GLfloat vertices[] = 
     {
+      0.0f, 0.0f, 0.0f,
+      0.0f, 0.0f, 0.0f,
+      0.0f, 0.0f, 0.0f,
+
+      0.0f, 0.0f, 0.0f,
+      0.0f, 0.0f, 0.0f,
+      0.0f, 0.0f, 0.0f,
+
       0.0f, 0.0f, 0.0f,
       0.0f, 0.0f, 0.0f,
       0.0f, 0.0f, 0.0f,
@@ -163,9 +171,9 @@ int main() {
 
     // Main render loop
     while (!glfwWindowShouldClose(window)) {
-        int width, height, sidebarWidth;
+        int width, height, sideBarWidth;
         glfwGetWindowSize(window, &width, &height);
-        sidebarWidth = std::min(std::max((int)(width*0.2), 200), 400);
+        sideBarWidth = std::min(std::max((int)(width*0.2), 200), 400);
 
         // Render
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -209,7 +217,7 @@ int main() {
             }
             ImGui::EndMenu();
         }
-        int toolbarHeight = ImGui::GetWindowSize()[1];
+        int toolBarHeight = ImGui::GetWindowSize()[1];
         ImGui::EndMainMenuBar();
 
         // Debug
@@ -220,8 +228,8 @@ int main() {
         }
 
         // Sidebar
-        ImGui::SetNextWindowPos(ImVec2(0, toolbarHeight));
-        ImGui::SetNextWindowSize(ImVec2(sidebarWidth, height-toolbarHeight));
+        ImGui::SetNextWindowPos(ImVec2(0, toolBarHeight));
+        ImGui::SetNextWindowSize(ImVec2(sideBarWidth, height-toolBarHeight));
         ImGui::Begin("ImGUI Window", &p_open, window_flags);
         ImGui::Text("Clips");
         ImGui::SeparatorText("Clips");
@@ -231,23 +239,57 @@ int main() {
         ImGui::End();
 
 
-        // Edit verticies
+        // Edit vertices
         int scrubBarHeight = (int)std::min(std::max(height*0.25, 100.0), 200.0);
-        // Triangle 1
-        vertices[0] = normalizeToCoordinateSpace(sidebarWidth, width);
-        vertices[1] = 1.0f;
-        vertices[3] = 1.0f;
-        vertices[4] = -normalizeToCoordinateSpace(toolbarHeight, height);
-        vertices[6] = normalizeToCoordinateSpace(sidebarWidth, width);
-        vertices[7] = normalizeToCoordinateSpace(scrubBarHeight, height);
 
-        // Triangle 2
-        vertices[9]  = 1.0f;
-        vertices[10] = 1.0f;
-        vertices[12] = 1.0f;
-        vertices[13] = normalizeToCoordinateSpace(scrubBarHeight, height);
-        vertices[15] = normalizeToCoordinateSpace(sidebarWidth, width);
-        vertices[16] = normalizeToCoordinateSpace(scrubBarHeight, height);
+        int availableWidth = width-sideBarWidth;
+        int availableHeight = height-scrubBarHeight;
+
+        // Maintain aspect ratio
+        float screenWidth, screenHeight;
+        if ((float)availableWidth/availableHeight > ASPECT_RATIO) {
+          screenHeight = availableHeight;
+          screenWidth = availableHeight * ASPECT_RATIO;
+        } else {
+          screenWidth = availableWidth;
+          screenHeight = availableWidth / ASPECT_RATIO;
+        }
+
+        float centerX = sideBarWidth + (availableWidth - screenWidth) / 2.0f;
+        float centerY = toolBarHeight + (availableHeight - screenHeight) / 2.0f;
+
+        // Screen Triangle 1
+        vertices[0] = normalizeToCoordinateSpace(centerX, width);
+        vertices[1] = -normalizeToCoordinateSpace(centerY + screenHeight, height);
+        vertices[3] = normalizeToCoordinateSpace(centerX + screenWidth, width);
+        vertices[4] = -normalizeToCoordinateSpace(centerY + screenHeight, height);
+        vertices[6] = normalizeToCoordinateSpace(centerX, width);
+        vertices[7] = -normalizeToCoordinateSpace(centerY, height);
+
+        // Screen Triangle 2
+        vertices[9] =  normalizeToCoordinateSpace(centerX + screenWidth, width);
+        vertices[10] = -normalizeToCoordinateSpace(centerY + screenHeight, height);
+        vertices[12] = normalizeToCoordinateSpace(centerX + screenWidth, width);
+        vertices[13] = -normalizeToCoordinateSpace(centerY, height);
+        vertices[15] = normalizeToCoordinateSpace(centerX, width);
+        vertices[16] = -normalizeToCoordinateSpace(centerY, height);
+
+        // Scrub Bar Triangle 1
+        //vertices[18] = normalizeToCoordinateSpace(centerX + screenWidth, width);
+        //vertices[19] = normalizeToCoordinateSpace(scrubBarHeight, height);
+        //vertices[21] = normalizeToCoordinateSpace(centerX + screenWidth, width);
+        //vertices[22] = -1.0f;
+        //vertices[24] = normalizeToCoordinateSpace(centerX, width);
+        //vertices[25] = -1.0f;
+
+        // Scrub Bar Triangle 1
+        //vertices[27] = normalizeToCoordinateSpace(centerX + screenWidth, width);
+        //vertices[28] = -1.0f;
+        //vertices[30] = normalizeToCoordinateSpace(centerX + screenWidth, width);
+        //vertices[31] = -1.0f;
+        //vertices[33] = normalizeToCoordinateSpace(centerX, width);
+        //vertices[34] = normalizeToCoordinateSpace(scrubBarHeight, height);
+
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 
