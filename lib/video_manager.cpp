@@ -140,11 +140,31 @@ bool VideoManager::LoadFrame(const char* filename, int* width_out, int* height_o
 
   // Use Shader for this
   // Convert to RGB
+  // Convert YUV to RGB properly
   for (int y = 0; y < av_frame->height; y++) {
     for (int x = 0; x < av_frame->width; x++) {
-      data[y*av_frame->width * 3 + x + 0] = av_frame->data[0][y * av_frame->linesize[0] + x];
-      data[y*av_frame->width * 3 + x + 1] = av_frame->data[0][y * av_frame->linesize[0] + x];
-      data[y*av_frame->width * 3 + x + 2] = av_frame->data[0][y * av_frame->linesize[0] + x];
+      int yi = y * av_frame->linesize[0] + x;
+      int ui = (y/2) * av_frame->linesize[1] + (x/2);
+      int vi = (y/2) * av_frame->linesize[2] + (x/2);
+
+      int Y = av_frame->data[0][yi];
+      int U = av_frame->data[1][ui];
+      int V = av_frame->data[2][vi];
+
+      // RGB conversion
+      int R = Y + 1.402 * (V-128);
+      int G = Y - 0.344136 * (U-128) - 0.714136 * (V-128);
+      int B = Y + 1.772 * (U-128);
+
+      // Clamp values
+      R = std::min(255, std::max(0, R));
+      G = std::min(255, std::max(0, G));
+      B = std::min(255, std::max(0, B));
+
+      int idx = (y * av_frame->width + x) * 3;
+      data[idx] = R;
+      data[idx + 1] = G;
+      data[idx + 2] = B;
     }
   }
 
