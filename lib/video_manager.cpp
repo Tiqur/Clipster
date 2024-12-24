@@ -1,6 +1,5 @@
-#include "video_manager.h"
-
 #include <iostream>
+#include "video_manager.h"
 
 extern "C"
 {
