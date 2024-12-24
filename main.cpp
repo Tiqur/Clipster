@@ -2,6 +2,8 @@
 #include"imgui_impl_glfw.h"
 #include"imgui_impl_opengl3.h"
 
+#include"video_manager.h"
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -41,6 +43,9 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 }
 
 int main() {
+    VideoManager vm{};
+
+
     // Initialize GLFW
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;

@@ -22,6 +22,11 @@ include_directories(
     ${GLEW_INCLUDE_DIRS}
     ${GLFW_INCLUDE_DIRS}
     imgui
+    lib
+)
+
+set(LIB_SRC
+    lib/video_manager.cpp
 )
 
 # Add ImGui source files
@@ -36,7 +41,7 @@ set(IMGUI_SRC
 )
 
 # Create the executable
-add_executable(proj main.cpp ${IMGUI_SRC})
+add_executable(proj main.cpp ${IMGUI_SRC} ${LIB_SRC})
 
 # Link the necessary libraries
 target_link_libraries(proj
