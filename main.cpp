@@ -149,7 +149,7 @@ class Rewind {
           sideBarWidth = std::min(std::max((int)(width*0.2), 200), 400);
 
           // Render
-          glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+          glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
           glClear(GL_COLOR_BUFFER_BIT);
           glUseProgram(shaderProgram);
           glBindTexture(GL_TEXTURE_2D, texture);
