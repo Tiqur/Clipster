@@ -11,7 +11,7 @@
         glew
         glfw3
         pkg-config
-        ffmpeg
+        ffmpeg_6-full
       ];
     };
   };

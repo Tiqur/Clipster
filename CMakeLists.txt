@@ -16,6 +16,22 @@ find_package(GLEW REQUIRED)
 # Find GLFW
 find_package(glfw3 REQUIRED)
 
+# Find PkgConfig
+find_package(PkgConfig REQUIRED)
+
+# Check FFmpeg modules
+pkg_check_modules(LIBAV REQUIRED IMPORTED_TARGET
+    libavdevice
+    libavfilter
+    libavformat
+    libavdevice
+    libavutil
+    libswresample
+    libswscale
+    libavcodec
+)
+
+
 # Include directories for OpenGL, GLEW, GLFW, and ImGui
 include_directories(
     ${OPENGL_INCLUDE_DIRS}
@@ -47,6 +63,7 @@ add_executable(proj main.cpp ${IMGUI_SRC} ${LIB_SRC})
 target_link_libraries(proj
     ${OPENGL_LIBRARIES}
     ${GLEW_LIBRARIES}
+    PkgConfig::LIBAV
     glfw
 )
 

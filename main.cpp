@@ -10,7 +10,7 @@
 #include <cmath>
 
 
-const int DEBUG = false;
+const int DEBUG = true;
 
 // This will be dynamic to video dimensions
 // Will also create black bars if window size doesn't conform
@@ -43,7 +43,20 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 }
 
 int main() {
-    VideoManager vm{};
+    VideoManager vm;
+
+    const char* filename = "video.mp4";
+    int frame_width = 0;
+    int frame_height = 0;
+    unsigned char* frame_data = nullptr;
+    vm.LoadFrame(filename, &frame_width, &frame_height, &frame_data);
+
+    if (frame_height == 0) {
+      std::cout << "frame height cannot be 0" << std::endl;
+      return -1;
+    }
+
+    const float ASPECT_RATIO = (float)frame_width / frame_height;
 
 
     // Initialize GLFW
