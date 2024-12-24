@@ -43,6 +43,7 @@ include_directories(
 
 set(LIB_SRC
     lib/video_manager.cpp
+    lib/shader_utils.cpp
 )
 
 # Add ImGui source files

@@ -3,6 +3,7 @@
 #include"imgui_impl_opengl3.h"
 
 #include"video_manager.h"
+#include"shader_utils.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -14,40 +15,6 @@ const int DEBUG = false;
 const char WINDOW_TITLE[] = "Rewind";
 const int INITIAL_WIDTH = 800;
 const int INITIAL_HEIGHT = 600;
-
-// Vertex Shader source code
-const char* vertexShaderSource = R"(
-#version 330 core
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec3 aColor;
-layout (location = 2) in vec2 aTexCoord;
-
-out vec3 ourColor;
-out vec2 TexCoord;
-
-void main()
-{
-    gl_Position = vec4(aPos, 1.0);
-    ourColor = aColor;
-    TexCoord = aTexCoord;
-}
-)";
-
-//Fragment Shader source code
-const char* fragmentShaderSource = R"(
-#version 330 core
-out vec4 FragColor;
-  
-in vec3 ourColor;
-in vec2 TexCoord;
-
-uniform sampler2D ourTexture;
-
-void main()
-{
-    FragColor = texture(ourTexture, TexCoord);
-}
-)";
 
 
 class Rewind {
@@ -123,52 +90,14 @@ class Rewind {
       // Set the viewport
       glViewport(0, 0, 800, 600);
 
-      GLint success;
-      char infoLog[512];
-
-      GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-      glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-      glCompileShader(vertexShader);
-      glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-      if (!success) {
-          glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-          std::cout << "Vertex shader compilation failed:\n" << infoLog << std::endl;
-      }
-
-
-      GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-      glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-      glCompileShader(fragmentShader);
-      glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-      if (!success) {
-          glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-          std::cout << "Fragment shader compilation failed:\n" << infoLog << std::endl;
-      }
-
-
-      GLuint shaderProgram = glCreateProgram();
-
-      glAttachShader(shaderProgram, vertexShader);
-      glAttachShader(shaderProgram, fragmentShader);
-
-      glLinkProgram(shaderProgram);
-      glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-      if (!success) {
-          glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-          std::cout << "Shader program linking failed:\n" << infoLog << std::endl;
-      }
-
-      glDeleteShader(vertexShader);
-      glDeleteShader(fragmentShader);
-
-
+      // Load Shaders
+      GLuint shaderProgram = createShaderProgram("../shaders/vertex_shader.glsl", "../shaders/fragment_shader.glsl");
 
 
       GLuint VAO, VBO;
-
       glGenVertexArrays(1, &VAO);
-      glGenBuffers(1, &VBO);
 
+      glGenBuffers(1, &VBO);
       glBindVertexArray(VAO);
 
       glBindBuffer(GL_ARRAY_BUFFER, VBO);
