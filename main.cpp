@@ -29,6 +29,12 @@ const char* fragmentShaderSource = "#version 330 core\n"
 "   FragColor = vec4(0.0f, 0.0f, 0.00f, 1.0f);\n"
 "}\n\0";
 
+
+
+float normalizeToCoordinateSpace(float a, float b) {
+  return (2.0*a)/b-1;
+}
+
 // Callback to handle window resizing
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
@@ -228,20 +234,20 @@ int main() {
         // Edit verticies
         int scrubBarHeight = (int)std::min(std::max(height*0.25, 100.0), 200.0);
         // Triangle 1
-        vertices[0] = (2.0*sidebarWidth)/width-1;
-        vertices[1] = 1.0;
-        vertices[3] = 1.0;
-        vertices[4] = -((2.0*toolbarHeight)/height-1);
-        vertices[6] = (2.0*sidebarWidth)/width-1;
-        vertices[7] = (2.0*scrubBarHeight)/height-1;
+        vertices[0] = normalizeToCoordinateSpace(sidebarWidth, width);
+        vertices[1] = 1.0f;
+        vertices[3] = 1.0f;
+        vertices[4] = -normalizeToCoordinateSpace(toolbarHeight, height);
+        vertices[6] = normalizeToCoordinateSpace(sidebarWidth, width);
+        vertices[7] = normalizeToCoordinateSpace(scrubBarHeight, height);
 
         // Triangle 2
         vertices[9]  = 1.0f;
-        vertices[10] = 1.0;
-        vertices[12] = 1.0;
-        vertices[13] = (2.0*scrubBarHeight)/height-1;
-        vertices[15] = (2.0*sidebarWidth)/width-1;
-        vertices[16] = (2.0*scrubBarHeight)/height-1;
+        vertices[10] = 1.0f;
+        vertices[12] = 1.0f;
+        vertices[13] = normalizeToCoordinateSpace(scrubBarHeight, height);
+        vertices[15] = normalizeToCoordinateSpace(sidebarWidth, width);
+        vertices[16] = normalizeToCoordinateSpace(scrubBarHeight, height);
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 
