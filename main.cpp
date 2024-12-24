@@ -11,6 +11,9 @@
 
 
 const int DEBUG = false;
+const char WINDOW_TITLE[] = "Rewind";
+const int INITIAL_WIDTH = 800;
+const int INITIAL_HEIGHT = 600;
 
 // Vertex Shader source code
 const char* vertexShaderSource = R"(
@@ -104,7 +107,7 @@ int main() {
     };
 
     // Create a window
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Rewind", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(INITIAL_WIDTH, INITIAL_HEIGHT, WINDOW_TITLE, NULL, NULL);
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
