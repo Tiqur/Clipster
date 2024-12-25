@@ -292,23 +292,8 @@ class Rewind {
       ImGui::Begin("Sidebar", &p_open, window_flags);
       ImGui::Text("Clips");
       ImGui::SeparatorText("Clips");
-
-      for (int i = 0; i < clips.size(); i++) {
-        ImGui::InputText(" ", clips[i].name, 256);
-        ImGui::SameLine(); 
-        
-        if (ImGui::Button("Delete")) {
-          clips.erase(clips.begin() + i);
-          break;
-        }
-        
-      }
-
-
-
       if (ImGui::Button("Export All"))
         std::cout << "[INFO]: Export All" << std::endl;
-
       ImGui::SeparatorText("Settings");
       static int volume = 50;
       ImGui::SliderInt("Volume", &volume, 0, 100);
@@ -414,7 +399,7 @@ class Rewind {
             ImGui::GetWindowDrawList()->AddRectFilled(top_left, bottom_right, IM_COL32(0, 255, 0, 50));
             
             // Handle config
-            float handle_h_padding = 3.0f;
+            float handle_h_padding = 2.0f;
             float handle_v_padding = 1.0f;
             auto handle_color = IM_COL32(0, 255, 0, 255);
             
