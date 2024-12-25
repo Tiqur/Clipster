@@ -11,6 +11,7 @@
 #include <cmath>
 #include <vector>
 #include <algorithm>
+#include <cstring>
 
 
 const int DEBUG = true;
@@ -22,12 +23,27 @@ class Clip {
 public:
   int time_start;
   int time_end;
-  char* name;
+  int buffer_size = 256;
+  char* name = new char[this->buffer_size];
 
   Clip(int time_start, int time_end, char* name) {
     this->time_start = time_start;
     this->time_end = time_end;
-    this->name = name;
+    this->setName(name);
+    std::cout << name << " " << this->name << std::endl;
+  }
+
+  ~Clip() {
+    //delete[] name;
+  }
+
+  void setName(char* newName) {
+    if (newName) {
+      strncpy(name, newName, this->buffer_size - 1);
+      name[this->buffer_size - 1] = '\0';
+    } else {
+      name[0] = '\0';
+    }
   }
 };
 
@@ -294,16 +310,16 @@ class Rewind {
       ImGui::SeparatorText("Clips");
 
       for (int i = 0; i < clips.size(); i++) {
-        ImGui::InputText(" ", clips[i].name, 256);
+        Clip c = clips[i];
+
+        ImGui::InputText(("##ClipName" + std::to_string(i)).c_str(), c.name, c.buffer_size);
+
         ImGui::SameLine(); 
-        
-        if (ImGui::Button("Delete")) {
+        if (ImGui::Button(("Delete##" + std::to_string(i)).c_str())) {
           clips.erase(clips.begin() + i);
           break;
         }
-        
       }
-
 
 
       if (ImGui::Button("Export All"))
