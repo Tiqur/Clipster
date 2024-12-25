@@ -69,6 +69,13 @@ class Rewind {
         Clip(400, 800, "Clip 3")
     };
 
+    const char* filename = "video.mp4";
+    int frame_width = 0;
+    int frame_height = 0;
+    unsigned char* frame_data = nullptr;
+    float screen_aspect_ratio = 0.0f;
+
+
     Rewind() {
 
     }
@@ -76,18 +83,14 @@ class Rewind {
     int run() {
       VideoManager vm;
 
-      const char* filename = "video.mp4";
-      int frame_width = 0;
-      int frame_height = 0;
-      unsigned char* frame_data = nullptr;
-      vm.LoadFrame(filename, &frame_width, &frame_height, &frame_data);
+      vm.LoadFrame(this->filename, &this->frame_width, &this->frame_height, &this->frame_data);
 
       if (frame_width == 0 || frame_height == 0) {
         std::cout << "Invalid frame dimensions" << std::endl;
         return -1;
       }
 
-      const float aspect_ratio = (float)frame_width / frame_height;
+      screen_aspect_ratio = (float)this->frame_width / this->frame_height;
 
       if (frame_data == nullptr) {
         std::cout << "Error: Frame data is null" << std::endl;
@@ -233,14 +236,14 @@ class Rewind {
 
           // Render Sidebar
           renderSidebar(width, height, p_open, toolBarHeight, sideBarWidth, window_flags);
-          renderBottomBar(p_open, window_flags, height, bottomBarHeight-toolBarHeight, sideBarWidth, availableWidth, aspect_ratio);
+          renderBottomBar(p_open, window_flags, height, bottomBarHeight-toolBarHeight, sideBarWidth, availableWidth);
 
           // Maintain aspect ratio
-          float screenWidth, screenHeight;
-          getScreenDimensions(&screenWidth, &screenHeight, availableHeight, availableWidth, aspect_ratio);
+          float normalizedScreenWidth, normalizedScreenHeight;
+          getScreenDimensions(&normalizedScreenWidth, &normalizedScreenHeight, availableHeight, availableWidth);
 
           // Update triangle vertices
-          updateScreenVertices(vertices, width, height, sideBarWidth, toolBarHeight, screenWidth, screenHeight, availableWidth, availableHeight);
+          updateScreenVertices(vertices, width, height, sideBarWidth, toolBarHeight, normalizedScreenWidth, normalizedScreenHeight, availableWidth, availableHeight);
 
           glBindBuffer(GL_ARRAY_BUFFER, VBO);
           glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
@@ -339,7 +342,7 @@ class Rewind {
       ImGui::End();
     }
 
-    void renderBottomBar(bool p_open, ImGuiWindowFlags window_flags, int height, int bottomBarHeight, int sideBarWidth, int bottomBarWidth, float aspect_ratio) {
+    void renderBottomBar(bool p_open, ImGuiWindowFlags window_flags, int height, int bottomBarHeight, int sideBarWidth, int bottomBarWidth) {
       ImGui::SetNextWindowPos(ImVec2(sideBarWidth, height-bottomBarHeight));
       ImGui::SetNextWindowSize(ImVec2(bottomBarWidth, bottomBarHeight));
       ImGui::Begin("Bottom Bar", &p_open, window_flags);
@@ -348,7 +351,7 @@ class Rewind {
 
       // TODO: Convert timestamp to percent
       std::vector<float> bookmarks = { 0.25f, 0.5f, 0.75f };
-      renderSeekBar(&g_progress, bookmarks, window_flags, p_open, aspect_ratio);
+      renderSeekBar(&g_progress, bookmarks, window_flags, p_open);
 
       // Render media buttons
       renderMediaButtons(bottomBarWidth);
@@ -356,7 +359,7 @@ class Rewind {
       ImGui::End();
     }
 
-    void renderSeekBar(float* g_progress, std::vector<float> bookmarks, ImGuiWindowFlags window_flags, bool p_open, float aspect_ratio) {
+    void renderSeekBar(float* g_progress, std::vector<float> bookmarks, ImGuiWindowFlags window_flags, bool p_open) {
       static bool g_seeking = false;
       ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
       ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
@@ -378,8 +381,10 @@ class Rewind {
       bool hovered = mouse_pos.y >= bar_position.y && mouse_pos.y <= bar_position.y + bar_size.y && mouse_pos.x >= bar_position.x && mouse_pos.x <= bar_position.x + bar_width;
 
       if (hovered) {
-        g_seeking = ImGui::IsMouseClicked(0);
-        renderSeekPreview(window_flags, p_open, mouse_pos, bar_position.y, aspect_ratio);
+        if (ImGui::IsMouseClicked(0)) {
+          g_seeking = true;
+        }
+        renderSeekPreview(window_flags, p_open, mouse_pos, bar_position.y);
       }
       
       if (g_seeking && mouse_down) {
@@ -402,11 +407,11 @@ class Rewind {
       renderClipBoxes(bar_position, this->clips, video_duration_ms);
     }
     
-    void renderSeekPreview(ImGuiWindowFlags window_flags, bool p_open, ImVec2 mouse_pos, int seek_bar_y_pos, float aspect_ratio) {
+    void renderSeekPreview(ImGuiWindowFlags window_flags, bool p_open, ImVec2 mouse_pos, int seek_bar_y_pos) {
       float vertical_padding = 10.0f;
       float previewWindowHeight = 200.0f;
 
-      ImVec2 preview_window_size = ImVec2(previewWindowHeight, previewWindowHeight/aspect_ratio);
+      ImVec2 preview_window_size = ImVec2(previewWindowHeight, previewWindowHeight/this->screen_aspect_ratio);
       ImGui::SetNextWindowPos(ImVec2(mouse_pos.x-preview_window_size.x/2, seek_bar_y_pos-preview_window_size.y-vertical_padding));
       ImGui::SetNextWindowSize(preview_window_size);
       ImGui::Begin("SeekPreview", &p_open, window_flags);
@@ -519,13 +524,13 @@ class Rewind {
         glViewport(0, 0, width, height);
     }
 
-    void getScreenDimensions(float* screenWidth, float* screenHeight, int availableHeight, int availableWidth, float aspect_ratio) {
-      if ((float)availableWidth/availableHeight > aspect_ratio) {
+    void getScreenDimensions(float* screenWidth, float* screenHeight, int availableHeight, int availableWidth) {
+      if ((float)availableWidth/availableHeight > this->screen_aspect_ratio) {
         *screenHeight = availableHeight;
-        *screenWidth = availableHeight * aspect_ratio;
+        *screenWidth = availableHeight * this->screen_aspect_ratio;
       } else {
         *screenWidth = availableWidth;
-        *screenHeight = availableWidth / aspect_ratio;
+        *screenHeight = availableWidth / this->screen_aspect_ratio;
       }
     }
 
