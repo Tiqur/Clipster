@@ -17,6 +17,19 @@ const char WINDOW_TITLE[] = "Rewind";
 const int INITIAL_WIDTH = 800;
 const int INITIAL_HEIGHT = 600;
 
+class Clip {
+public:
+  int time_start;
+  int time_end;
+  char* name;
+
+  Clip(int time_start, int time_end, char* name) {
+    this->time_start = time_start;
+    this->time_end = time_end;
+    this->name = name;
+  }
+};
+
 static void HelpMarker(const char* desc)
 {
     ImGui::TextDisabled("(?)");
@@ -338,17 +351,38 @@ class Rewind {
 
       ImGui::PopStyleColor(2);
 
+      std::vector<Clip> clips = { 
+          Clip(0, 150, "Clip 1"), 
+          Clip(200, 300, "Clip 2"), 
+          Clip(400, 800, "Clip 3")
+      };
+
+      unsigned int video_duration_ms = 1000;
       renderBookmarks(bar_position, bookmarks);
+      renderClipBoxes(bar_position, clips, video_duration_ms);
     }
 
     void renderBookmarks(ImVec2 bar_position, std::vector<float> bookmarks) {
       for (float bookmark : bookmarks) {
           ImVec2 bar_size = ImGui::GetItemRectSize();
           float x_position = bar_position.x + bookmark * bar_size.x;
-          std::cout << "Bookmark: " << bookmark << " Pos: " << x_position << std::endl;
           ImVec2 start = ImVec2(x_position, bar_position.y);
           ImVec2 end = ImVec2(x_position, bar_position.y + bar_size.y);
           ImGui::GetWindowDrawList()->AddLine(start, end, IM_COL32(255, 0, 0, 255), 2.0f);
+      }
+    }
+
+    void renderClipBoxes(ImVec2 bar_position, std::vector<Clip> clips, unsigned int video_duration_ms) {
+      ImVec2 bar_size = ImGui::GetItemRectSize();
+      for (Clip clip : clips) {
+        float x_position_start = bar_position.x + ((float)clip.time_start / video_duration_ms) * bar_size.x;
+        float x_position_end = bar_position.x + ((float)clip.time_end / video_duration_ms) * bar_size.x;
+
+        ImVec2 top_left = ImVec2(x_position_start, bar_position.y);
+        ImVec2 bottom_right = ImVec2(x_position_end, bar_position.y + bar_size.y);
+
+        ImGui::GetWindowDrawList()->AddRect(top_left, bottom_right, IM_COL32(0, 0, 255, 255), 0.0f, 0, 2.0f);
+        ImGui::GetWindowDrawList()->AddRectFilled(top_left, bottom_right, IM_COL32(0, 255, 0, 50));
       }
     }
 
