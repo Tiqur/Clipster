@@ -286,19 +286,59 @@ class Rewind {
       ImGui::SetNextWindowSize(ImVec2(bottomBarWidth, bottomBarHeight));
       ImGui::Begin("Bottom Bar", &p_open, window_flags);
 
-      float progress = 0.5;
-      ImVec2 bar_position = ImGui::GetCursorScreenPos();
-      ImGui::ProgressBar(progress, ImVec2(-FLT_MIN, 0.0f));
+      static float g_progress = 0.0f;
 
-      // Render bookmarks
       // TODO: Convert timestamp to percent
       std::vector<float> bookmarks = { 0.25f, 0.5f, 0.75f };
-      renderBookmarks(bar_position, bookmarks);
+      renderSeekBar(&g_progress, bookmarks);
 
       // Render media buttons
       renderMediaButtons(bottomBarWidth);
 
       ImGui::End();
+    }
+
+    void renderSeekBar(float* g_progress, std::vector<float> bookmarks) {
+      static bool g_seeking = false;
+      ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
+      ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.0f, 0.5f, 0.0f, 1.0f));
+
+      ImVec2 bar_position = ImGui::GetCursorScreenPos();
+      ImVec2 bar_size = ImVec2(-FLT_MIN, 20.0f);
+      
+      // Draw the progress bar
+      ImGui::ProgressBar(*g_progress, bar_size, "");
+      
+      // Calculate bar width (accounting for padding)
+      float bar_width = ImGui::GetContentRegionAvail().x;
+      
+      // Handle mouse interaction
+      ImVec2 mouse_pos = ImGui::GetIO().MousePos;
+      bool mouse_down = ImGui::IsMouseDown(0);
+      
+      // Check if mouse is over the progress bar
+      bool hovered = mouse_pos.y >= bar_position.y && mouse_pos.y <= bar_position.y + bar_size.y && mouse_pos.x >= bar_position.x && mouse_pos.x <= bar_position.x + bar_width;
+
+      if (hovered && ImGui::IsMouseClicked(0)) {
+          g_seeking = true;
+      }
+      
+      if (g_seeking && mouse_down) {
+          float relative_x = (mouse_pos.x - bar_position.x) / bar_width;
+          
+          if (relative_x < 0.0f) relative_x = 0.0f;
+          if (relative_x > 1.0f) relative_x = 1.0f;
+          
+          *g_progress = relative_x;
+      }
+      
+      if (!mouse_down) {
+          g_seeking = false;
+      }
+
+      ImGui::PopStyleColor(2);
+
+      renderBookmarks(bar_position, bookmarks);
     }
 
     void renderBookmarks(ImVec2 bar_position, std::vector<float> bookmarks) {
