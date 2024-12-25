@@ -231,7 +231,7 @@ class Rewind {
 
           // Render Sidebar
           renderSidebar(width, height, p_open, toolBarHeight, sideBarWidth, window_flags);
-          renderBottomBar(p_open, window_flags, height, bottomBarHeight-toolBarHeight, sideBarWidth, availableWidth);
+          renderBottomBar(p_open, window_flags, height, bottomBarHeight-toolBarHeight, sideBarWidth, availableWidth, aspect_ratio);
 
           // Maintain aspect ratio
           float screenWidth, screenHeight;
@@ -311,7 +311,7 @@ class Rewind {
 
       if (ImGui::Button("Create Clip")) {
         std::cout << "[INFO]: Create Clip" << std::endl;
-        this->clips.push_back(Clip(0, 0, "Clip"));
+        this->clips.push_back(Clip(0, 10, "Clip"));
       }
 
       for (int i = 0; i < clips.size(); i++) {
@@ -337,7 +337,7 @@ class Rewind {
       ImGui::End();
     }
 
-    void renderBottomBar(bool p_open, ImGuiWindowFlags window_flags, int height, int bottomBarHeight, int sideBarWidth, int bottomBarWidth) {
+    void renderBottomBar(bool p_open, ImGuiWindowFlags window_flags, int height, int bottomBarHeight, int sideBarWidth, int bottomBarWidth, float aspect_ratio) {
       ImGui::SetNextWindowPos(ImVec2(sideBarWidth, height-bottomBarHeight));
       ImGui::SetNextWindowSize(ImVec2(bottomBarWidth, bottomBarHeight));
       ImGui::Begin("Bottom Bar", &p_open, window_flags);
@@ -346,7 +346,7 @@ class Rewind {
 
       // TODO: Convert timestamp to percent
       std::vector<float> bookmarks = { 0.25f, 0.5f, 0.75f };
-      renderSeekBar(&g_progress, bookmarks);
+      renderSeekBar(&g_progress, bookmarks, window_flags, p_open, aspect_ratio);
 
       // Render media buttons
       renderMediaButtons(bottomBarWidth);
@@ -354,7 +354,7 @@ class Rewind {
       ImGui::End();
     }
 
-    void renderSeekBar(float* g_progress, std::vector<float> bookmarks) {
+    void renderSeekBar(float* g_progress, std::vector<float> bookmarks, ImGuiWindowFlags window_flags, bool p_open, float aspect_ratio) {
       static bool g_seeking = false;
       ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
       ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
@@ -375,8 +375,9 @@ class Rewind {
       // Check if mouse is over the progress bar
       bool hovered = mouse_pos.y >= bar_position.y && mouse_pos.y <= bar_position.y + bar_size.y && mouse_pos.x >= bar_position.x && mouse_pos.x <= bar_position.x + bar_width;
 
-      if (hovered && ImGui::IsMouseClicked(0)) {
-          g_seeking = true;
+      if (hovered) {
+        g_seeking = ImGui::IsMouseClicked(0);
+        renderSeekPreview(window_flags, p_open, mouse_pos, bar_position.y, aspect_ratio);
       }
       
       if (g_seeking && mouse_down) {
@@ -397,6 +398,17 @@ class Rewind {
       int video_duration_ms = 1000;
       renderBookmarks(bar_position, bookmarks);
       renderClipBoxes(bar_position, this->clips, video_duration_ms);
+    }
+    
+    void renderSeekPreview(ImGuiWindowFlags window_flags, bool p_open, ImVec2 mouse_pos, int seek_bar_y_pos, float aspect_ratio) {
+      float vertical_padding = 10.0f;
+      float previewWindowHeight = 200.0f;
+
+      ImVec2 preview_window_size = ImVec2(previewWindowHeight, previewWindowHeight/aspect_ratio);
+      ImGui::SetNextWindowPos(ImVec2(mouse_pos.x-preview_window_size.x/2, seek_bar_y_pos-preview_window_size.y-vertical_padding));
+      ImGui::SetNextWindowSize(preview_window_size);
+      ImGui::Begin("SeekPreview", &p_open, window_flags);
+      ImGui::End();
     }
 
     void renderBookmarks(ImVec2 bar_position, std::vector<float> bookmarks) {
