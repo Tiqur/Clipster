@@ -14,10 +14,12 @@
 #include <cstring>
 
 
-const int DEBUG = true;
-const char WINDOW_TITLE[] = "Rewind";
-const int INITIAL_WIDTH = 800;
-const int INITIAL_HEIGHT = 600;
+namespace Config {
+  constexpr char WINDOW_TITLE[] = "Rewind";
+  constexpr int INITIAL_WIDTH = 800;
+  constexpr int INITIAL_HEIGHT = 600;
+  const bool DEBUG = true;
+}
 
 class Clip {
 public:
@@ -118,7 +120,7 @@ class Rewind {
       };
 
       // Create a window
-      GLFWwindow* window = glfwCreateWindow(INITIAL_WIDTH, INITIAL_HEIGHT, WINDOW_TITLE, NULL, NULL);
+      GLFWwindow* window = glfwCreateWindow(Config::INITIAL_WIDTH, Config::INITIAL_HEIGHT, Config::WINDOW_TITLE, NULL, NULL);
       if (!window) {
           std::cerr << "Failed to create GLFW window" << std::endl;
           glfwTerminate();
@@ -217,7 +219,7 @@ class Rewind {
           renderToolbar(&toolBarHeight);
 
           // Debug
-          if (DEBUG) {
+          if (Config::DEBUG) {
             ImGui::ShowMetricsWindow();
             ImGui::ShowDebugLogWindow();
             ImGui::ShowDemoWindow();
