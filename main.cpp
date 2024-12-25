@@ -10,6 +10,7 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <algorithm>
 
 
 const int DEBUG = true;
@@ -44,6 +45,12 @@ static void HelpMarker(const char* desc)
 
 class Rewind {
   public:
+    std::vector<Clip> clips = { 
+        Clip(0, 150, "Clip 1"), 
+        Clip(200, 300, "Clip 2"), 
+        Clip(400, 800, "Clip 3")
+    };
+
     Rewind() {
 
     }
@@ -314,7 +321,7 @@ class Rewind {
     void renderSeekBar(float* g_progress, std::vector<float> bookmarks) {
       static bool g_seeking = false;
       ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
-      ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.0f, 0.5f, 0.0f, 1.0f));
+      ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
 
       ImVec2 bar_position = ImGui::GetCursorScreenPos();
       ImVec2 bar_size = ImVec2(-FLT_MIN, 20.0f);
@@ -351,15 +358,9 @@ class Rewind {
 
       ImGui::PopStyleColor(2);
 
-      std::vector<Clip> clips = { 
-          Clip(0, 150, "Clip 1"), 
-          Clip(200, 300, "Clip 2"), 
-          Clip(400, 800, "Clip 3")
-      };
-
-      unsigned int video_duration_ms = 1000;
+      int video_duration_ms = 1000;
       renderBookmarks(bar_position, bookmarks);
-      renderClipBoxes(bar_position, clips, video_duration_ms);
+      renderClipBoxes(bar_position, this->clips, video_duration_ms);
     }
 
     void renderBookmarks(ImVec2 bar_position, std::vector<float> bookmarks) {
@@ -372,27 +373,77 @@ class Rewind {
       }
     }
 
-    void renderClipBoxes(ImVec2 bar_position, std::vector<Clip> clips, unsigned int video_duration_ms) {
-      ImVec2 bar_size = ImGui::GetItemRectSize();
-      for (Clip clip : clips) {
-        float x_position_start = bar_position.x + ((float)clip.time_start / video_duration_ms) * bar_size.x;
-        float x_position_end = bar_position.x + ((float)clip.time_end / video_duration_ms) * bar_size.x;
-
-        ImVec2 top_left = ImVec2(x_position_start, bar_position.y);
-        ImVec2 bottom_right = ImVec2(x_position_end, bar_position.y + bar_size.y);
-
-        //ImGui::GetWindowDrawList()->AddRect(top_left, bottom_right, IM_COL32(0, 0, 255, 255), 0.0f, 0, 2.0f);
-        ImGui::GetWindowDrawList()->AddRectFilled(top_left, bottom_right, IM_COL32(0, 255, 0, 50));
-
-        // Randomize hue
-        auto handle_color = IM_COL32(0, 255, 0, 255);
-        float handle_h_padding = 5.0f;
-        float handle_v_padding = 1.0f;
+    void renderClipBoxes(ImVec2 bar_position, std::vector<Clip>& clips, int video_duration_ms) {
+        static int dragging_handle = -1;
+        static int active_clip_index = -1;
         
-        // Draw handlesc
-        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(x_position_start, bar_position.y-handle_v_padding), ImVec2(x_position_start+handle_h_padding, bottom_right.y+handle_v_padding), handle_color);
-        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(x_position_end, bar_position.y-handle_v_padding), ImVec2(bottom_right.x-handle_h_padding, bottom_right.y+handle_v_padding), handle_color);
-      }
+        ImVec2 bar_size = ImGui::GetItemRectSize();
+        ImVec2 mouse_pos = ImGui::GetIO().MousePos;
+        bool mouse_down = ImGui::IsMouseDown(0);
+        
+        // If mouse is released, reset dragging state
+        if (!mouse_down) {
+            dragging_handle = -1;
+            active_clip_index = -1;
+        }
+        
+        for (int i = 0; i < clips.size(); i++) {
+            Clip& clip = clips[i];
+            float x_position_start = bar_position.x + ((float)clip.time_start / video_duration_ms) * bar_size.x;
+            float x_position_end = bar_position.x + ((float)clip.time_end / video_duration_ms) * bar_size.x;
+            
+            ImVec2 top_left = ImVec2(x_position_start, bar_position.y);
+            ImVec2 bottom_right = ImVec2(x_position_end, bar_position.y + bar_size.y);
+            
+            // Draw clip box
+            ImGui::GetWindowDrawList()->AddRectFilled(top_left, bottom_right, IM_COL32(0, 255, 0, 50));
+            
+            // Handle config
+            float handle_h_padding = 5.0f;
+            float handle_v_padding = 1.0f;
+            auto handle_color = IM_COL32(0, 255, 0, 255);
+            
+            ImVec2 left_handle_min(x_position_start - handle_h_padding, bar_position.y - handle_v_padding);
+            ImVec2 left_handle_max(x_position_start + handle_h_padding, bottom_right.y + handle_v_padding);
+            ImVec2 right_handle_min(x_position_end - handle_h_padding, bar_position.y - handle_v_padding);
+            ImVec2 right_handle_max(x_position_end + handle_h_padding, bottom_right.y + handle_v_padding);
+            
+            // Draw handles
+            ImGui::GetWindowDrawList()->AddRectFilled(left_handle_min, left_handle_max, handle_color);
+            ImGui::GetWindowDrawList()->AddRectFilled(right_handle_min, right_handle_max, handle_color);
+            
+            // Check for handle interaction
+            if (dragging_handle == -1 && ImGui::IsMouseClicked(0)) {
+                // Left handle
+                if (mouse_pos.x >= left_handle_min.x && mouse_pos.x <= left_handle_max.x &&
+                    mouse_pos.y >= left_handle_min.y && mouse_pos.y <= left_handle_max.y) {
+                    dragging_handle = 0;
+                    active_clip_index = i;
+                }
+                // Right handle
+                else if (mouse_pos.x >= right_handle_min.x && mouse_pos.x <= right_handle_max.x &&
+                         mouse_pos.y >= right_handle_min.y && mouse_pos.y <= right_handle_max.y) {
+                    dragging_handle = 1;
+                    active_clip_index = i;
+                }
+            }
+            
+            // Handle dragging
+            if (mouse_down && active_clip_index == i && dragging_handle != -1) {
+                float relative_x = (mouse_pos.x - bar_position.x) / bar_size.x;
+                int new_time = relative_x * video_duration_ms;
+                
+                new_time = std::min(std::max(new_time, 0), video_duration_ms);
+                
+                if (dragging_handle == 0) {
+                    // Left handle - update start time
+                    clip.time_start = std::min(new_time, clip.time_end);
+                } else {
+                    // Right handle - update end time
+                    clip.time_end = std::max(new_time, clip.time_start);
+                }
+            }
+        }
     }
 
     void renderMediaButtons(int window_width) {
