@@ -381,8 +381,17 @@ class Rewind {
         ImVec2 top_left = ImVec2(x_position_start, bar_position.y);
         ImVec2 bottom_right = ImVec2(x_position_end, bar_position.y + bar_size.y);
 
-        ImGui::GetWindowDrawList()->AddRect(top_left, bottom_right, IM_COL32(0, 0, 255, 255), 0.0f, 0, 2.0f);
+        //ImGui::GetWindowDrawList()->AddRect(top_left, bottom_right, IM_COL32(0, 0, 255, 255), 0.0f, 0, 2.0f);
         ImGui::GetWindowDrawList()->AddRectFilled(top_left, bottom_right, IM_COL32(0, 255, 0, 50));
+
+        // Randomize hue
+        auto handle_color = IM_COL32(0, 255, 0, 255);
+        float handle_h_padding = 5.0f;
+        float handle_v_padding = 1.0f;
+        
+        // Draw handlesc
+        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(x_position_start, bar_position.y-handle_v_padding), ImVec2(x_position_start+handle_h_padding, bottom_right.y+handle_v_padding), handle_color);
+        ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(x_position_end, bar_position.y-handle_v_padding), ImVec2(bottom_right.x-handle_h_padding, bottom_right.y+handle_v_padding), handle_color);
       }
     }
 
