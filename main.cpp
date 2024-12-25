@@ -16,6 +16,17 @@ const char WINDOW_TITLE[] = "Rewind";
 const int INITIAL_WIDTH = 800;
 const int INITIAL_HEIGHT = 600;
 
+static void HelpMarker(const char* desc)
+{
+    ImGui::TextDisabled("(?)");
+    if (ImGui::BeginItemTooltip())
+    {
+        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+        ImGui::TextUnformatted(desc);
+        ImGui::PopTextWrapPos();
+        ImGui::EndTooltip();
+    }
+}
 
 class Rewind {
   public:
@@ -261,7 +272,10 @@ class Rewind {
       ImGui::SeparatorText("Clips");
       if (ImGui::Button("Export All"))
         std::cout << "[INFO]: Export All" << std::endl;
-      ImGui::SeparatorText("More");
+      ImGui::SeparatorText("Settings");
+      static int volume = 50;
+      ImGui::SliderInt("Volume", &volume, 0, 100);
+      ImGui::SameLine(); HelpMarker("CTRL+click to input value.");
       ImGui::End();
     }
 
