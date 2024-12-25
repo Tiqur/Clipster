@@ -309,6 +309,11 @@ class Rewind {
       ImGui::Text("Clips");
       ImGui::SeparatorText("Clips");
 
+      if (ImGui::Button("Create Clip")) {
+        std::cout << "[INFO]: Create Clip" << std::endl;
+        this->clips.push_back(Clip(0, 0, "Clip"));
+      }
+
       for (int i = 0; i < clips.size(); i++) {
         Clip c = clips[i];
 
@@ -322,8 +327,8 @@ class Rewind {
       }
 
 
-      if (ImGui::Button("Export All"))
-        std::cout << "[INFO]: Export All" << std::endl;
+      //if (ImGui::Button("Export All"))
+        //std::cout << "[INFO]: Export All" << std::endl;
 
       ImGui::SeparatorText("Settings");
       static int volume = 50;
