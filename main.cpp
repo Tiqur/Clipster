@@ -4,6 +4,7 @@
 
 #include"video_manager.h"
 #include"shader_utils.h"
+#include"desktop_capture.hpp"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -81,6 +82,10 @@ class Rewind {
     }
 
     int run() {
+      DesktopCapture dc;
+      dc.captureScreen();
+      return -1;
+
       VideoManager vm;
 
       vm.LoadFrame(this->filename, &this->frame_width, &this->frame_height, &this->frame_data);
