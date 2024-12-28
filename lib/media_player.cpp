@@ -129,7 +129,7 @@ bool MediaPlayer::loadFile(const char* fileName) {
         return false;
       }
 
-      // Process and push to videoQueue
+      // Process and push to videoBuffer
       processVideoFrame(this->videoFrame);
 
     } else if (this->packet->stream_index == this->audioStreamIndex) {
@@ -150,7 +150,7 @@ bool MediaPlayer::loadFile(const char* fileName) {
         return false;
       }
 
-      // Process and push to audioQueue
+      // Process and push to audioBuffer
       processAudioFrame(this->audioFrame);
     } else {
       std::cout << "Unsupported stream type for packet" << std::endl;
@@ -158,8 +158,8 @@ bool MediaPlayer::loadFile(const char* fileName) {
     }
   }
 
-  std::cout << "Video queue size: " << this->videoQueue.size() << std::endl;
-  std::cout << "Audio queue size: " << this->audioQueue.size() << std::endl;
+  std::cout << "Video queue size: " << this->videoBuffer.size() << std::endl;
+  std::cout << "Audio queue size: " << this->audioBuffer.size() << std::endl;
   return this->pFormatContext;
 }
 
@@ -175,18 +175,22 @@ void MediaPlayer::processVideoFrame(AVFrame* frame) {
     memcpy(vf.data[i], frame->data[i], size);
     vf.linesize[i] = frame->linesize[i];
   }
-  //vf.pts = frame->pts;
+  
+  AVStream* stream = this->pFormatContext->streams[this->videoStreamIndex];
+  vf.pts = frame->pts * av_q2d(stream->time_base);
 
-  this->videoQueue.push(vf);
+  this->videoBuffer.push_back(vf);
 }
 
 void MediaPlayer::processAudioFrame(AVFrame* frame) {
   AudioFrame af;
   //af.data = 
   //af.size = 
-  //af.pts = 
 
-  this->audioQueue.push(af);
+  AVStream* stream = this->pFormatContext->streams[this->audioStreamIndex];
+  af.pts = frame->pts * av_q2d(stream->time_base);
+
+  this->audioBuffer.push_back(af);
 }
 
 void MediaPlayer::play() {

@@ -66,8 +66,8 @@ public:
 
   bool loadFile(char* fileName);
   void reset();
-  std::queue<VideoFrame> videoQueue;
-  std::queue<AudioFrame> audioQueue;
+  std::vector<VideoFrame> videoBuffer;
+  std::vector<AudioFrame> audioBuffer;
 
 };
 

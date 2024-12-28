@@ -13,6 +13,7 @@
 #include <vector>
 #include <algorithm>
 #include <cstring>
+#include <thread>
 
 
 namespace Config {
@@ -84,7 +85,7 @@ class Rewind {
     int run() {
       MediaPlayer mp;
       mp.loadFile(this->filename);
-      VideoFrame firstFrame = mp.videoQueue.front();
+      VideoFrame firstFrame = mp.videoBuffer[0];
       std::cout << firstFrame.width << std::endl;
       this->frame_width = firstFrame.width;
       this->frame_height = firstFrame.height;
@@ -220,6 +221,9 @@ class Rewind {
       window_flags |= ImGuiWindowFlags_NoTitleBar;
       static bool p_open = false;
 
+      int audioBufferIndex = 0;
+      int videoBufferIndex = 0;
+
       // Main render loop
       while (!glfwWindowShouldClose(window)) {
           int width, height, sideBarWidth, bottomBarHeight;
@@ -231,9 +235,22 @@ class Rewind {
           glClear(GL_COLOR_BUFFER_BIT);
           glUseProgram(shaderProgram);
 
-          // Generate texture from frame
-          if (mp.videoQueue.size() > 0) {
-            VideoFrame frame = mp.videoQueue.front();
+          // Get current time
+          double currentTime = glfwGetTime();
+
+          // Calculate timing based on video and audio
+          double videoPts = mp.videoBuffer.front().pts;
+          double audioPts = mp.audioBuffer.front().pts;
+
+          // Audio and video synchronization tolerance
+          const double syncTolerance = 0.05; // 50ms
+          bool audioVideoInSync = std::abs(videoPts - audioPts) < syncTolerance;
+
+          // Synchronize and play
+          if (audioVideoInSync && !mp.videoBuffer.empty() && !mp.audioBuffer.empty()) {
+            // Render video 
+            // Generate texture from frame
+            VideoFrame frame = mp.videoBuffer[videoBufferIndex];
 
             // Bind and update Y plane texture
             glActiveTexture(GL_TEXTURE0);
@@ -253,7 +270,22 @@ class Rewind {
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame.width / 2, frame.height / 2, GL_RED, GL_UNSIGNED_BYTE, frame.data[2]);
             glUniform1i(glGetUniformLocation(shaderProgram, "textureV"), 2);
 
-            mp.videoQueue.pop();
+            // Play audio
+            AudioFrame audioFrame = mp.audioBuffer[audioBufferIndex];
+            //playAudio(audioFrame);
+
+            audioBufferIndex++;
+            videoBufferIndex++;
+          } else {
+              if (videoPts < audioPts) {
+                  // Drop video frame
+                  videoBufferIndex++;
+                  std::cout << "Dropping video frame..." << std::endl;
+              } else {
+                  // Drop audio frame
+                  audioBufferIndex++;
+                  std::cout << "Dropping audio frame..." << std::endl;
+              }
           }
 
           glBindVertexArray(VAO);
