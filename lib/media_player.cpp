@@ -108,31 +108,55 @@ bool MediaPlayer::loadFile(const char* fileName) {
   // Read packets from streams
   std::cout << "Reading packets..." << std::endl;
   while (av_read_frame(this->pFormatContext, this->packet) >= 0) {
-    AVCodecContext** codecContext;
-    AVFrame** frame;
-    
     // Determine which codec context to use (video or audio)
     if (this->packet->stream_index == this->videoStreamIndex) {
-      codecContext = &this->videoCodecContext;
-      frame = &this->videoFrame;
+
+      // Send raw data packet to decoder
+      avcodec_send_packet(this->videoCodecContext, this->packet);
+
+      // Receive raw data frame
+      avcodec_receive_frame(this->videoCodecContext, this->videoFrame);
+
+      // Process and push to videoQueue
+      processVideoFrame(this->videoFrame);
     } else if (this->packet->stream_index == this->audioStreamIndex) {
-      codecContext = &this->audioCodecContext;
-      frame = &this->audioFrame;
+
+      // Send raw data packet to decoder
+      avcodec_send_packet(this->audioCodecContext, this->packet);
+
+      // Receive raw data frame
+      avcodec_receive_frame(this->audioCodecContext, this->audioFrame);
+
+      // Process and push to audioQueue
+      processAudioFrame(this->audioFrame);
     } else {
       std::cout << "Unsupported stream type for packet" << std::endl;
       continue;
     }
-
-    // Send raw data packet to decoder
-    avcodec_send_packet(*codecContext, this->packet);
-
-    // Receive raw data frame
-    avcodec_receive_frame(*codecContext, *frame);
-
-    std::cout << (*frame)->pts << std::endl;
   }
 
+  std::cout << "Video queue size: " << this->videoQueue.size() << std::endl;
+  std::cout << "Audi queue size: " << this->audioQueue.size() << std::endl;
   return this->pFormatContext;
+}
+
+void MediaPlayer::processVideoFrame(AVFrame* frame) {
+  VideoFrame vf;
+  vf.width = frame->width;
+  vf.height = frame->height;
+  //vf.pts = frame->pts;
+  //vf.data = 
+
+  this->videoQueue.push(vf);
+}
+
+void MediaPlayer::processAudioFrame(AVFrame* frame) {
+  AudioFrame af;
+  //af.data = 
+  //af.size = 
+  //af.pts = 
+
+  this->audioQueue.push(af);
 }
 
 void MediaPlayer::play() {
