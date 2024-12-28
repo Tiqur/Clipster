@@ -62,7 +62,7 @@ public:
   void processAudioFrame(AVFrame* frame);
   void play();
   void pause();
-  void seek(unsigned int time);
+  void seek(double targetTime, bool backward);
 
   bool loadFile(char* fileName);
   void reset();

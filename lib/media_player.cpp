@@ -1,5 +1,6 @@
 #include "media_player.hpp"
 #include <iostream>
+#include <algorithm>
 
 
 MediaPlayer::MediaPlayer() {
@@ -201,6 +202,36 @@ void MediaPlayer::pause() {
 
 }
 
-void MediaPlayer::seek(unsigned int time) {
+void MediaPlayer::seek(double targetTime, bool backward = false) {
+  if (backward) {
+    auto it = std::find_if(this->videoBuffer.rbegin(), this->videoBuffer.rend(), 
+      [targetTime](const VideoFrame& frame) { return frame.pts <= targetTime; });
 
+    if (it != this->videoBuffer.rend()) {
+      this->videoBuffer.insert(this->videoBuffer.begin(), *it);
+    }
+  } else {
+    for (auto& frame : this->videoBuffer) {
+      if (frame.pts >= targetTime) {
+        this->videoBuffer.insert(this->videoBuffer.begin(), frame);
+        break;
+      }
+    }
+  }
+
+  if (backward) {
+    auto it = std::find_if(this->audioBuffer.rbegin(), this->audioBuffer.rend(), 
+      [targetTime](const AudioFrame& frame) { return frame.pts <= targetTime; });
+
+    if (it != audioBuffer.rend()) {
+      this->audioBuffer.insert(this->audioBuffer.begin(), *it);
+    }
+  } else {
+    for (auto& frame : this->audioBuffer) {
+      if (frame.pts >= targetTime) {
+        this->audioBuffer.insert(this->audioBuffer.begin(), frame);
+        break;
+        }
+    }
+  }
 }

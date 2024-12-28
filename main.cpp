@@ -246,13 +246,24 @@ class Rewind {
           const double syncTolerance = 0.05; // 50ms
           bool audioVideoInSync = std::abs(videoPts - audioPts) < syncTolerance;
 
-          // Synchronize and play
-          if (audioVideoInSync && !mp.videoBuffer.empty() && !mp.audioBuffer.empty()) {
-            // Render video 
-            // Generate texture from frame
+          // Seek if audio / video not in sync
+          if (!audioVideoInSync && !mp.videoBuffer.empty() && !mp.audioBuffer.empty()) {
+            if (videoPts > audioPts) {
+              double seekTime = audioPts - syncTolerance;
+              mp.seek(seekTime, true);
+            }
+            else {
+              double seekTime = videoPts + syncTolerance;
+              mp.seek(seekTime, false);
+            }
+
+            audioBufferIndex = 0;
+            videoBufferIndex = 0;
+          } else if (audioVideoInSync && !mp.videoBuffer.empty() && !mp.audioBuffer.empty()) {
+            // Render video
             VideoFrame frame = mp.videoBuffer[videoBufferIndex];
 
-            // Bind and update Y plane texture
+            // Generate texture from frame
             glActiveTexture(GL_TEXTURE0);
             glBindTexture(GL_TEXTURE_2D, textureY);
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame.width, frame.height, GL_RED, GL_UNSIGNED_BYTE, frame.data[0]);
@@ -277,15 +288,7 @@ class Rewind {
             audioBufferIndex++;
             videoBufferIndex++;
           } else {
-              if (videoPts < audioPts) {
-                  // Drop video frame
-                  videoBufferIndex++;
-                  std::cout << "Dropping video frame..." << std::endl;
-              } else {
-                  // Drop audio frame
-                  audioBufferIndex++;
-                  std::cout << "Dropping audio frame..." << std::endl;
-              }
+            std::cout << "Audio and video are out of sync but no seek triggered." << std::endl;
           }
 
           glBindVertexArray(VAO);
