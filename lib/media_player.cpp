@@ -105,6 +105,8 @@ bool MediaPlayer::loadFile(const char* fileName) {
   this->videoFrame = av_frame_alloc();
   this->audioFrame = av_frame_alloc();
 
+  int response;
+
   // Read packets from streams
   std::cout << "Reading packets..." << std::endl;
   while (av_read_frame(this->pFormatContext, this->packet) >= 0) {
@@ -112,20 +114,41 @@ bool MediaPlayer::loadFile(const char* fileName) {
     if (this->packet->stream_index == this->videoStreamIndex) {
 
       // Send raw data packet to decoder
-      avcodec_send_packet(this->videoCodecContext, this->packet);
+      response = avcodec_send_packet(this->videoCodecContext, this->packet);
+      if (response < 0) {
+        std::cout << "Failed to send packet" << std::endl;
+        return false;
+      }
 
       // Receive raw data frame
-      avcodec_receive_frame(this->videoCodecContext, this->videoFrame);
+      response = avcodec_receive_frame(this->videoCodecContext, this->videoFrame);
+      if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+        continue;
+      } else if (response < 0) {
+        std::cout << "Failed to receive frame" << std::endl;
+        return false;
+      }
 
       // Process and push to videoQueue
       processVideoFrame(this->videoFrame);
+
     } else if (this->packet->stream_index == this->audioStreamIndex) {
 
       // Send raw data packet to decoder
-      avcodec_send_packet(this->audioCodecContext, this->packet);
+      response = avcodec_send_packet(this->audioCodecContext, this->packet);
+      if (response < 0) {
+        std::cout << "Failed to send packet" << std::endl;
+        return false;
+      }
 
       // Receive raw data frame
-      avcodec_receive_frame(this->audioCodecContext, this->audioFrame);
+      response = avcodec_receive_frame(this->audioCodecContext, this->audioFrame);
+      if (response == AVERROR(EAGAIN) || response == AVERROR_EOF) {
+        continue;
+      } else if (response < 0) {
+        std::cout << "Failed to receive frame" << std::endl;
+        return false;
+      }
 
       // Process and push to audioQueue
       processAudioFrame(this->audioFrame);
@@ -136,7 +159,7 @@ bool MediaPlayer::loadFile(const char* fileName) {
   }
 
   std::cout << "Video queue size: " << this->videoQueue.size() << std::endl;
-  std::cout << "Audi queue size: " << this->audioQueue.size() << std::endl;
+  std::cout << "Audio queue size: " << this->audioQueue.size() << std::endl;
   return this->pFormatContext;
 }
 
@@ -145,8 +168,37 @@ void MediaPlayer::processVideoFrame(AVFrame* frame) {
   vf.width = frame->width;
   vf.height = frame->height;
   //vf.pts = frame->pts;
-  //vf.data = 
 
+  // TODO: Be sure to free this
+  vf.data = new unsigned char[frame->width * frame->height * 3];
+
+  for (int y = 0; y < frame->height; y++) {
+    for (int x = 0; x < frame->width; x++) {
+      int yi = y * frame->linesize[0] + x;
+      int ui = (y/2) * frame->linesize[1] + (x/2);
+      int vi = (y/2) * frame->linesize[2] + (x/2);
+
+      int Y = frame->data[0][yi];
+      int U = frame->data[1][ui];
+      int V = frame->data[2][vi];
+
+      // RGB conversion
+      int R = Y + 1.402 * (V-128);
+      int G = Y - 0.344136 * (U-128) - 0.714136 * (V-128);
+      int B = Y + 1.772 * (U-128);
+
+      // Clamp values
+      R = std::min(255, std::max(0, R));
+      G = std::min(255, std::max(0, G));
+      B = std::min(255, std::max(0, B));
+
+      int idx = (y * frame->width + x) * 3;
+      vf.data[idx] = R;
+      vf.data[idx + 1] = G;
+      vf.data[idx + 2] = B;
+    }
+  }
+ 
   this->videoQueue.push(vf);
 }
 

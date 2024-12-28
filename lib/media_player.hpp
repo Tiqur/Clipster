@@ -45,8 +45,6 @@ private:
   AVPacket* packet = nullptr; // Reused for both video and audio
   AVFrame* videoFrame = nullptr;
   AVFrame* audioFrame = nullptr;
-  std::queue<VideoFrame> videoQueue;
-  std::queue<AudioFrame> audioQueue;
 
   // For synchronization between threads
   std::mutex videoMutex;
@@ -67,6 +65,8 @@ public:
 
   bool loadFile(char* fileName);
   void reset();
+  std::queue<VideoFrame> videoQueue;
+  std::queue<AudioFrame> audioQueue;
 
 };
 

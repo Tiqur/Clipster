@@ -175,9 +175,13 @@ class Rewind {
       unsigned int texture;
       glGenTextures(1, &texture);
       glBindTexture(GL_TEXTURE_2D, texture);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame_width, frame_height, 0, GL_RGB, GL_UNSIGNED_BYTE, frame_data);
-      glGenerateMipmap(GL_TEXTURE_2D);
+      //glGenTextures(1, &texture);
+      //glBindTexture(GL_TEXTURE_2D, texture);
+      //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame_width, frame_height, 0, GL_RGB, GL_UNSIGNED_BYTE, frame_data);
+      //glGenerateMipmap(GL_TEXTURE_2D);
 
+      //std::cout << frame_width << std::endl;
+      //std::cout << frame.width << std::endl;
 
 
       // Register the framebuffer size callback
@@ -209,7 +213,16 @@ class Rewind {
           glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
           glClear(GL_COLOR_BUFFER_BIT);
           glUseProgram(shaderProgram);
-          glBindTexture(GL_TEXTURE_2D, texture);
+
+          // Generate texture from frame
+          if (mp.videoQueue.size() > 0) {
+            VideoFrame frame = mp.videoQueue.front();
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame.width, frame.height, 0, GL_RGB, GL_UNSIGNED_BYTE, frame.data);
+            glGenerateMipmap(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, texture);
+            mp.videoQueue.pop();
+          }
+
           glBindVertexArray(VAO);
           glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices)/sizeof(vertices[0])/5);
 
