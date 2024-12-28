@@ -106,7 +106,8 @@ bool MediaPlayer::loadFile(const char* fileName) {
   this->audioFrame = av_frame_alloc();
 
   // Read packets from streams
-  while (av_read_frame(this->pFormatContext, this->packet)) {
+  std::cout << "Reading packets..." << std::endl;
+  while (av_read_frame(this->pFormatContext, this->packet) >= 0) {
     AVCodecContext** codecContext;
     AVFrame** frame;
     
