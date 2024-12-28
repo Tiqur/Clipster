@@ -5,6 +5,7 @@
 #include"video_manager.h"
 #include"shader_utils.h"
 #include"desktop_capture.hpp"
+#include"media_player.hpp"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -83,8 +84,10 @@ class Rewind {
 
     int run() {
       VideoManager vm;
-
       vm.LoadFrame(this->filename, &this->frame_width, &this->frame_height, &this->frame_data);
+
+      MediaPlayer mp;
+      mp.loadFile(this->filename);
 
       if (frame_width == 0 || frame_height == 0) {
         std::cout << "Invalid frame dimensions" << std::endl;
