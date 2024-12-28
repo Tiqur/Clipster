@@ -2,7 +2,6 @@
 #include"imgui_impl_glfw.h"
 #include"imgui_impl_opengl3.h"
 
-#include"video_manager.h"
 #include"shader_utils.h"
 #include"desktop_capture.hpp"
 #include"media_player.hpp"
@@ -83,20 +82,21 @@ class Rewind {
     }
 
     int run() {
-      VideoManager vm;
-      vm.LoadFrame(this->filename, &this->frame_width, &this->frame_height, &this->frame_data);
-
       MediaPlayer mp;
       mp.loadFile(this->filename);
+      VideoFrame firstFrame = mp.videoQueue.front();
+      std::cout << firstFrame.width << std::endl;
+      this->frame_width = firstFrame.width;
+      this->frame_height = firstFrame.height;
 
-      if (frame_width == 0 || frame_height == 0) {
+      if (this->frame_width == 0 || this->frame_height == 0) {
         std::cout << "Invalid frame dimensions" << std::endl;
         return -1;
       }
 
       screen_aspect_ratio = (float)this->frame_width / this->frame_height;
 
-      if (frame_data == nullptr) {
+      if (firstFrame.data == nullptr) {
         std::cout << "Error: Frame data is null" << std::endl;
         return -1;
       }

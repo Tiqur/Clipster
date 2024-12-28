@@ -43,7 +43,6 @@ include_directories(
 
 set(LIB_SRC
     lib/desktop_capture.cpp
-    lib/video_manager.cpp
     lib/shader_utils.cpp
     lib/media_player.cpp
 )
