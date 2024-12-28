@@ -19,7 +19,7 @@ namespace Config {
   constexpr char WINDOW_TITLE[] = "Rewind";
   constexpr int INITIAL_WIDTH = 800;
   constexpr int INITIAL_HEIGHT = 600;
-  const bool DEBUG = true;
+  const bool DEBUG = false;
 }
 
 class Clip {
@@ -82,10 +82,6 @@ class Rewind {
     }
 
     int run() {
-      DesktopCapture dc;
-      dc.captureScreen();
-      return -1;
-
       VideoManager vm;
 
       vm.LoadFrame(this->filename, &this->frame_width, &this->frame_height, &this->frame_data);
