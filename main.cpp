@@ -171,18 +171,35 @@ class Rewind {
 
 
 
-      // Generate texture
-      unsigned int texture;
-      glGenTextures(1, &texture);
-      glBindTexture(GL_TEXTURE_2D, texture);
-      //glGenTextures(1, &texture);
-      //glBindTexture(GL_TEXTURE_2D, texture);
-      //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame_width, frame_height, 0, GL_RGB, GL_UNSIGNED_BYTE, frame_data);
-      //glGenerateMipmap(GL_TEXTURE_2D);
+      // Generate textures
+      GLuint textureY, textureU, textureV;
+      glGenTextures(1, &textureY);
+      glGenTextures(1, &textureU);
+      glGenTextures(1, &textureV);
 
-      //std::cout << frame_width << std::endl;
-      //std::cout << frame.width << std::endl;
+      // Initialize Y texture
+      glBindTexture(GL_TEXTURE_2D, textureY);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, frame_width, frame_height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
 
+      // Initialize U texture
+      glBindTexture(GL_TEXTURE_2D, textureU);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, frame_width/2, frame_height/2, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+
+      // Initialize V texture
+      glBindTexture(GL_TEXTURE_2D, textureV);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, frame_width/2, frame_height/2, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
 
       // Register the framebuffer size callback
       glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -217,9 +234,25 @@ class Rewind {
           // Generate texture from frame
           if (mp.videoQueue.size() > 0) {
             VideoFrame frame = mp.videoQueue.front();
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, frame.width, frame.height, 0, GL_RGB, GL_UNSIGNED_BYTE, frame.data);
-            glGenerateMipmap(GL_TEXTURE_2D);
-            glBindTexture(GL_TEXTURE_2D, texture);
+
+            // Bind and update Y plane texture
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textureY);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame.width, frame.height, GL_RED, GL_UNSIGNED_BYTE, frame.data[0]);
+            glUniform1i(glGetUniformLocation(shaderProgram, "textureY"), 0);
+
+            // Bind and update U plane texture
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, textureU);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame.width / 2, frame.height / 2, GL_RED, GL_UNSIGNED_BYTE, frame.data[1]);
+            glUniform1i(glGetUniformLocation(shaderProgram, "textureU"), 1);
+
+            // Bind and update V plane texture
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, textureV);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame.width / 2, frame.height / 2, GL_RED, GL_UNSIGNED_BYTE, frame.data[2]);
+            glUniform1i(glGetUniformLocation(shaderProgram, "textureV"), 2);
+
             mp.videoQueue.pop();
           }
 

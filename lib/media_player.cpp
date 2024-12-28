@@ -167,38 +167,16 @@ void MediaPlayer::processVideoFrame(AVFrame* frame) {
   VideoFrame vf;
   vf.width = frame->width;
   vf.height = frame->height;
+
+  // Copy pixel data for each plane
+  for (int i = 0; i < 3; i++) {
+    int size = frame->linesize[i] * (i == 0 ? frame->height : frame->height/2);
+    vf.data[i] = new uint8_t[size];
+    memcpy(vf.data[i], frame->data[i], size);
+    vf.linesize[i] = frame->linesize[i];
+  }
   //vf.pts = frame->pts;
 
-  // TODO: Be sure to free this
-  vf.data = new unsigned char[frame->width * frame->height * 3];
-
-  for (int y = 0; y < frame->height; y++) {
-    for (int x = 0; x < frame->width; x++) {
-      int yi = y * frame->linesize[0] + x;
-      int ui = (y/2) * frame->linesize[1] + (x/2);
-      int vi = (y/2) * frame->linesize[2] + (x/2);
-
-      int Y = frame->data[0][yi];
-      int U = frame->data[1][ui];
-      int V = frame->data[2][vi];
-
-      // RGB conversion
-      int R = Y + 1.402 * (V-128);
-      int G = Y - 0.344136 * (U-128) - 0.714136 * (V-128);
-      int B = Y + 1.772 * (U-128);
-
-      // Clamp values
-      R = std::min(255, std::max(0, R));
-      G = std::min(255, std::max(0, G));
-      B = std::min(255, std::max(0, B));
-
-      int idx = (y * frame->width + x) * 3;
-      vf.data[idx] = R;
-      vf.data[idx + 1] = G;
-      vf.data[idx + 2] = B;
-    }
-  }
- 
   this->videoQueue.push(vf);
 }
 

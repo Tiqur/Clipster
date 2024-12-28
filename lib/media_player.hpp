@@ -22,7 +22,8 @@ struct AudioFrame {
 };
 
 struct VideoFrame {
-    uint8_t* data;
+    uint8_t* data[3];
+    int linesize[3];
     int width;
     int height;
     double pts;
