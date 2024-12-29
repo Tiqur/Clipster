@@ -45,6 +45,7 @@ set(LIB_SRC
     lib/desktop_capture.cpp
     lib/shader_utils.cpp
     lib/media_player.cpp
+    lib/UIManager.cpp
 )
 
 # Add ImGui source files
