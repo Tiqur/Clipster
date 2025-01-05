@@ -54,6 +54,7 @@ private:
   int videoBufferIndex = 0;
   bool shouldRenderFrame;
   bool paused = false;
+  double currentTime = 0.0;
 
   // For synchronization between threads
   std::mutex videoMutex;

@@ -196,11 +196,17 @@ void MediaPlayer::processAudioFrame(AVFrame* frame) {
 }
 
 void MediaPlayer::play() {
-  this->paused = false;
+  if (this->paused) {
+    this->playbackStartTime = this->playbackStartTime + (this->currentTime - this->lastFrameTime);
+    this->lastFrameTime = this->currentTime;
+    this->paused = false;
+  } 
 }
 
 void MediaPlayer::pause() {
-  this->paused = true;
+  if (!this->paused) {
+    this->paused = true;
+  }
 }
 
 void MediaPlayer::seek(double targetTime, bool backward = false) {
@@ -238,8 +244,10 @@ void MediaPlayer::seek(double targetTime, bool backward = false) {
 }
 
 void MediaPlayer::syncMedia(double currentTime) {
+  this->currentTime = currentTime;
+
   // Get current and elapsed time
-  double playbackTime = currentTime - this->playbackStartTime;
+  double playbackTime = this->currentTime - this->playbackStartTime;
 
   // Calculate timing based on video and audio
   double videoPts = this->videoBuffer[0].pts;
@@ -273,7 +281,7 @@ void MediaPlayer::syncMedia(double currentTime) {
 
 
     if (this->shouldRenderFrame) {
-      lastFrameTime = currentTime;
+      lastFrameTime = this->currentTime;
       this->videoBufferIndex++;
       this->audioBufferIndex++;
     }
