@@ -154,7 +154,7 @@ void UIManager::renderSeekBar() {
   
   if (g_seeking && mouseDown) {
     this->mediaPlayer->seek(targetTime);
-    //this->mediaPlayer->pause();
+    this->mediaPlayer->pause();
   }
   
   if (!mouseDown) {
@@ -304,12 +304,7 @@ void UIManager::renderBookmarks(ImVec2 barPos, std::vector<float> bookmarks) {
 
 void UIManager::renderMediaButtons() {
   static bool paused = false;
-
-  if (paused) {
-    this->mediaPlayer->pause();
-  } else {
-    this->mediaPlayer->play();
-  }
+  paused = mediaPlayer->isPaused();
 
   const char* label = paused ? "Play" : "Pause";
 
@@ -324,5 +319,10 @@ void UIManager::renderMediaButtons() {
 
   if(ImGui::Button(label)) {
     paused = !paused;
+    if (paused) {
+      this->mediaPlayer->pause();
+    } else {
+      this->mediaPlayer->play();
+    }
   }
 }

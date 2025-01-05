@@ -175,28 +175,26 @@ class Rewind {
           mp.syncMedia(glfwGetTime());
 
           // Play next available video and audio frame
-          if (mp.shouldRenderMedia()) {
-            VideoFrame vFrame = mp.getVideoFrame();
-            AudioFrame aFrame = mp.getAudioFrame();
+          VideoFrame vFrame = mp.getVideoFrame();
+          AudioFrame aFrame = mp.getAudioFrame();
 
-            // Generate texture from frame
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, textureY);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width, vFrame.height, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[0]);
-            glUniform1i(glGetUniformLocation(shaderProgram, "textureY"), 0);
+          // Generate texture from frame
+          glActiveTexture(GL_TEXTURE0);
+          glBindTexture(GL_TEXTURE_2D, textureY);
+          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width, vFrame.height, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[0]);
+          glUniform1i(glGetUniformLocation(shaderProgram, "textureY"), 0);
 
-            // Bind and update U plane texture
-            glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, textureU);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width / 2, vFrame.height / 2, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[1]);
-            glUniform1i(glGetUniformLocation(shaderProgram, "textureU"), 1);
+          // Bind and update U plane texture
+          glActiveTexture(GL_TEXTURE1);
+          glBindTexture(GL_TEXTURE_2D, textureU);
+          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width / 2, vFrame.height / 2, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[1]);
+          glUniform1i(glGetUniformLocation(shaderProgram, "textureU"), 1);
 
-            // Bind and update V plane texture
-            glActiveTexture(GL_TEXTURE2);
-            glBindTexture(GL_TEXTURE_2D, textureV);
-            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width / 2, vFrame.height / 2, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[2]);
-            glUniform1i(glGetUniformLocation(shaderProgram, "textureV"), 2);
-          }
+          // Bind and update V plane texture
+          glActiveTexture(GL_TEXTURE2);
+          glBindTexture(GL_TEXTURE_2D, textureV);
+          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width / 2, vFrame.height / 2, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[2]);
+          glUniform1i(glGetUniformLocation(shaderProgram, "textureV"), 2);
 
           glBindVertexArray(VAO);
           glDrawArrays(GL_TRIANGLES, 0, sizeof(vertices)/sizeof(vertices[0])/5);
