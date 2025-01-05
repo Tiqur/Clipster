@@ -212,7 +212,7 @@ void MediaPlayer::pause() {
 // TODO: More efficient way to do this
 void MediaPlayer::seek(double targetTime) {
   // Reset video frame index to closest
-  for (size_t i = 0; i < this->videoBuffer.size(); ++i) {
+  for (size_t i = 0; i < this->videoBuffer.size()-1; ++i) {
     if (this->videoBuffer[i].pts >= targetTime) {
       this->videoBufferIndex = i;
       break;
@@ -220,7 +220,7 @@ void MediaPlayer::seek(double targetTime) {
   }
 
   // Reset audio frame index to closest
-  for (size_t i = 0; i < this->audioBuffer.size(); ++i) {
+  for (size_t i = 0; i < this->audioBuffer.size()-1; ++i) {
     if (this->audioBuffer[i].pts >= targetTime) {
       this->audioBufferIndex = i;
       break;
@@ -258,8 +258,8 @@ void MediaPlayer::syncMedia(double currentTime) {
 
     if (this->shouldRenderFrame) {
       lastFrameTime = this->currentTime;
-      this->videoBufferIndex++;
-      this->audioBufferIndex++;
+      this->videoBufferIndex = std::max(0, std::min(this->videoBufferIndex+1, (int)this->videoBuffer.size()-1));
+      this->audioBufferIndex = std::max(0, std::min(this->audioBufferIndex+1, (int)this->audioBuffer.size()-1));
     }
   } else {
     std::cout << "Audio and video are out of sync but no seek triggered." << std::endl;
@@ -279,7 +279,7 @@ bool MediaPlayer::shouldRenderMedia() {
 }
 
 double MediaPlayer::getTotalDuration() {
-  return this->pFormatContext->duration / 1000000.0;
+  return this->videoBuffer.back().pts - this->videoBuffer.front().pts;
 }
 
 bool MediaPlayer::isPaused() {
@@ -291,8 +291,5 @@ double MediaPlayer::getProgress() {
     return 0.0;
   }
   
-  double totalDuration = this->videoBuffer.back().pts - this->videoBuffer.front().pts;
-  double currentTime = this->videoBuffer[videoBufferIndex].pts - this->videoBuffer.front().pts;
-  
-  return std::max(0.0, std::min(100.0, (currentTime / totalDuration) * 100.0));
+  return std::max(0.0, std::min(100.0, (this->getVideoFrame().pts / this->getTotalDuration()) * 100.0));
 }

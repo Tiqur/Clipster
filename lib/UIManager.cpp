@@ -126,21 +126,20 @@ void UIManager::renderSeekBar() {
   ImVec2 barSize = ImVec2(-FLT_MIN, 20.0f);
   
   // Calculate bar width (accounting for padding)
-  float barWidth = ImGui::GetContentRegionAvail().x;
+  double barWidth = ImGui::GetContentRegionAvail().x;
   
   // Handle mouse interaction
   ImVec2 mousePos = ImGui::GetIO().MousePos;
   bool mouseDown = ImGui::IsMouseDown(0);
 
   // Pre-calculate target time in case of seek
-  float relative_x = (mousePos.x - barPos.x) / barWidth;
   double totalDuration = this->mediaPlayer->getTotalDuration();
+  double relative_x = std::min(std::max((mousePos.x - barPos.x) / barWidth, 0.0), barWidth);
   double targetTime = std::min(totalDuration, std::max(relative_x * totalDuration, 0.0));
 
   // Draw the progress bar
   static float g_progress = 0.0f;
   g_progress = mouseDown ? (targetTime / totalDuration) : this->mediaPlayer->getProgress() / 100.0;
-
   ImGui::ProgressBar(g_progress, barSize, "");
   
   // Check if mouse is over the progress bar
@@ -154,8 +153,8 @@ void UIManager::renderSeekBar() {
   }
   
   if (g_seeking && mouseDown) {
-      this->mediaPlayer->seek(targetTime);
-      //this->mediaPlayer->pause();
+    this->mediaPlayer->seek(targetTime);
+    //this->mediaPlayer->pause();
   }
   
   if (!mouseDown) {
@@ -169,12 +168,18 @@ void UIManager::renderSeekBar() {
   renderBookmarks(barPos, bookmarks);
   renderClipBoxes(barPos, this->clips, (int)totalDuration*1000);
 
+  // TODO: Move to helper function
   double currentFrameTime = mediaPlayer->getVideoFrame().pts;
   double currentTimeInMicroseconds = currentFrameTime * 1000000;
   int hours = (int)(currentTimeInMicroseconds / 3600000000);
   int minutes = (int)((currentTimeInMicroseconds - hours * 3600000000) / 60000000);
   int seconds = (int)((currentTimeInMicroseconds - hours * 3600000000 - minutes * 60000000) / 1000000);
   int milliseconds = (int)((currentTimeInMicroseconds - hours * 3600000000 - minutes * 60000000 - seconds * 1000000) / 1000);
+
+  if (std::isnan(currentFrameTime) || currentFrameTime < 0) {
+    ImGui::Text("Invalid timestamp");
+    return;
+  }
 
   ImGui::Text("%02d:%02d:%02d:%03d", hours, minutes, seconds, milliseconds);
 }
