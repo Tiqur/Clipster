@@ -211,6 +211,7 @@ void MediaPlayer::pause() {
 
 // TODO: More efficient way to do this
 void MediaPlayer::seek(double targetTime) {
+
   // Reset video frame index to closest
   for (size_t i = 0; i < this->videoBuffer.size()-1; ++i) {
     if (this->videoBuffer[i].pts >= targetTime) {
@@ -226,6 +227,9 @@ void MediaPlayer::seek(double targetTime) {
       break;
     }
   }
+
+  this->lastFrameTime = this->currentTime;
+  this->playbackStartTime = this->currentTime - targetTime;
 }
 
 void MediaPlayer::syncMedia(double currentTime) {
