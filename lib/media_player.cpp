@@ -196,11 +196,11 @@ void MediaPlayer::processAudioFrame(AVFrame* frame) {
 }
 
 void MediaPlayer::play() {
-
+  this->paused = false;
 }
 
 void MediaPlayer::pause() {
-
+  this->paused = true;
 }
 
 void MediaPlayer::seek(double targetTime, bool backward = false) {
@@ -269,7 +269,7 @@ void MediaPlayer::syncMedia(double currentTime) {
     VideoFrame frame = this->videoBuffer[this->videoBufferIndex];
 
     // Determine if should render frame using elapsed time
-    this->shouldRenderFrame = (frame.pts <= playbackTime) || (this->videoBufferIndex == 0);
+    this->shouldRenderFrame = ((frame.pts <= playbackTime) || (this->videoBufferIndex == 0)) && !this->paused;
 
 
     if (this->shouldRenderFrame) {

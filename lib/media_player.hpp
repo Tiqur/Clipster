@@ -53,6 +53,7 @@ private:
   int audioBufferIndex = 0;
   int videoBufferIndex = 0;
   bool shouldRenderFrame;
+  bool paused = false;
 
   // For synchronization between threads
   std::mutex videoMutex;

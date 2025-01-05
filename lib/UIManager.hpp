@@ -4,6 +4,7 @@
 #include"imgui.h"
 #include"imgui_impl_glfw.h"
 #include"imgui_impl_opengl3.h"
+#include "media_player.hpp"
 #include <vector>
 #include <iostream>
 
@@ -53,6 +54,7 @@ class UIManager {
 private:
   float* videoAspectRatio;
   char* openglVersion;
+  MediaPlayer* mediaPlayer;
   GLFWwindow* glfwWindow;
   ImGuiWindowFlags sideBarWindowFlags = 0;
   ImGuiWindowFlags bottomBarWindowFlags = 0;
@@ -86,7 +88,7 @@ private:
 public:
   UIManager();
   ~UIManager();
-  bool init(int* windowWidth, int* windowHeight, GLFWwindow* window, char* openglVersion, float* videoAspectRatio);
+  bool init(MediaPlayer* mediaPlayer, int* windowWidth, int* windowHeight, GLFWwindow* window, char* openglVersion, float* videoAspectRatio);
   void setDebug(bool b);
   void render();
 };

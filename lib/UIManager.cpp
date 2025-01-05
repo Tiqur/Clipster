@@ -9,12 +9,13 @@ UIManager::~UIManager() {
 
 }
 
-bool UIManager::init(int* windowWidth, int* windowHeight, GLFWwindow* window, char* openglVersion, float* videoAspectRatio) {
+bool UIManager::init(MediaPlayer* mediaPlayer, int* windowWidth, int* windowHeight, GLFWwindow* window, char* openglVersion, float* videoAspectRatio) {
     if (!windowWidth || !windowHeight || !window || !openglVersion) {
         std::cerr << "Invalid arguments passed to UIManager::init!" << std::endl;
         return false;
     }
 
+    this->mediaPlayer = mediaPlayer;
     this->p_open = true;
     this->glfwWindow = window;
     this->openglVersion = openglVersion;
@@ -288,6 +289,13 @@ void UIManager::renderBookmarks(ImVec2 barPos, std::vector<float> bookmarks) {
 
 void UIManager::renderMediaButtons() {
   static bool paused = false;
+
+  if (paused) {
+    (*this->mediaPlayer).pause();
+  } else {
+    (*this->mediaPlayer).play();
+  }
+
   const char* label = paused ? "Play" : "Pause";
 
   ImGuiStyle& style = ImGui::GetStyle();
