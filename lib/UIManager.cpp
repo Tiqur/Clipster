@@ -139,7 +139,7 @@ void UIManager::renderSeekBar() {
 
   // Draw the progress bar
   static float g_progress = 0.0f;
-  g_progress = mouseDown ? (targetTime / totalDuration) : this->mediaPlayer->getProgress() / 100.0;
+  g_progress = (mouseDown && ImGui::IsItemClicked()) ? (targetTime / totalDuration) : this->mediaPlayer->getProgress() / 100.0;
   ImGui::ProgressBar(g_progress, barSize, "");
   
   // Check if mouse is over the progress bar
