@@ -161,6 +161,7 @@ bool MediaPlayer::loadFile(const char* fileName) {
 
   std::cout << "Video queue size: " << this->videoBuffer.size() << std::endl;
   std::cout << "Audio queue size: " << this->audioBuffer.size() << std::endl;
+
   return this->pFormatContext;
 }
 
