@@ -209,36 +209,21 @@ void MediaPlayer::pause() {
   }
 }
 
-void MediaPlayer::seek(double targetTime, bool backward = false) {
-  if (backward) {
-    auto it = std::find_if(this->videoBuffer.rbegin(), this->videoBuffer.rend(), 
-      [targetTime](const VideoFrame& frame) { return frame.pts <= targetTime; });
-
-    if (it != this->videoBuffer.rend()) {
-      this->videoBuffer.insert(this->videoBuffer.begin(), *it);
-    }
-  } else {
-    for (auto& frame : this->videoBuffer) {
-      if (frame.pts >= targetTime) {
-        this->videoBuffer.insert(this->videoBuffer.begin(), frame);
-        break;
-      }
+// TODO: More efficient way to do this
+void MediaPlayer::seek(double targetTime) {
+  // Reset video frame index to closest
+  for (size_t i = 0; i < this->videoBuffer.size(); ++i) {
+    if (this->videoBuffer[i].pts >= targetTime) {
+      this->videoBufferIndex = i;
+      break;
     }
   }
 
-  if (backward) {
-    auto it = std::find_if(this->audioBuffer.rbegin(), this->audioBuffer.rend(), 
-      [targetTime](const AudioFrame& frame) { return frame.pts <= targetTime; });
-
-    if (it != audioBuffer.rend()) {
-      this->audioBuffer.insert(this->audioBuffer.begin(), *it);
-    }
-  } else {
-    for (auto& frame : this->audioBuffer) {
-      if (frame.pts >= targetTime) {
-        this->audioBuffer.insert(this->audioBuffer.begin(), frame);
-        break;
-        }
+  // Reset audio frame index to closest
+  for (size_t i = 0; i < this->audioBuffer.size(); ++i) {
+    if (this->audioBuffer[i].pts >= targetTime) {
+      this->audioBufferIndex = i;
+      break;
     }
   }
 }
@@ -260,17 +245,8 @@ void MediaPlayer::syncMedia(double currentTime) {
 
   // Seek if audio / video not in sync
   if (!audioVideoInSync && !this->videoBuffer.empty() && !this->audioBuffer.empty()) {
-    if (videoPts > audioPts) {
-      double seekTime = audioPts - syncTolerance;
-      this->seek(seekTime, true);
-    }
-    else {
-      double seekTime = videoPts + syncTolerance;
-      this->seek(seekTime, false);
-    }
-
-    this->audioBufferIndex = 0;
-    this->videoBufferIndex = 0;
+    // TODO: Test if this works
+    this->seek(videoPts);
   } else if (audioVideoInSync && !this->videoBuffer.empty() && !this->audioBuffer.empty()) {
 
     // Render video
@@ -302,6 +278,14 @@ bool MediaPlayer::shouldRenderMedia() {
   return this->shouldRenderFrame;
 }
 
+double MediaPlayer::getTotalDuration() {
+  return this->pFormatContext->duration / 1000000.0;
+}
+
+bool MediaPlayer::isPaused() {
+  return this->paused;
+}
+
 double MediaPlayer::getProgress() {
   if (this->videoBuffer.size() == 0) {
     return 0.0;
@@ -310,5 +294,5 @@ double MediaPlayer::getProgress() {
   double totalDuration = this->videoBuffer.back().pts - this->videoBuffer.front().pts;
   double currentTime = this->videoBuffer[videoBufferIndex].pts - this->videoBuffer.front().pts;
   
-  return std::max(0.0, std::min(100.0, (this->currentTime / totalDuration) * 100.0));
+  return std::max(0.0, std::min(100.0, (currentTime / totalDuration) * 100.0));
 }

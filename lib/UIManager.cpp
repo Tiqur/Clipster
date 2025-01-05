@@ -141,6 +141,8 @@ void UIManager::renderSeekBar() {
   // Check if mouse is over the progress bar
   bool hovered = mousePos.y >= barPos.y && mousePos.y <= barPos.y + barSize.y && mousePos.x >= barPos.x && mousePos.x <= barPos.x + barWidth;
 
+  double totalDuration = this->mediaPlayer->getTotalDuration();
+
   if (hovered) {
     if (ImGui::IsMouseClicked(0)) {
       g_seeking = true;
@@ -150,11 +152,10 @@ void UIManager::renderSeekBar() {
   
   if (g_seeking && mouseDown) {
       float relative_x = (mousePos.x - barPos.x) / barWidth;
-      
-      if (relative_x < 0.0f) relative_x = 0.0f;
-      if (relative_x > 1.0f) relative_x = 1.0f;
-      
-      g_progress = relative_x;
+      double targetTime = std::min(totalDuration, std::max(relative_x * totalDuration, 0.0));
+
+      this->mediaPlayer->seek(targetTime);
+      //this->mediaPlayer->pause();
   }
   
   if (!mouseDown) {
@@ -163,12 +164,10 @@ void UIManager::renderSeekBar() {
 
   ImGui::PopStyleColor(2);
 
-  int video_duration_ms = 1000;
-
   // TODO: Convert timestamp to percent
   std::vector<float> bookmarks = { 0.25f, 0.5f, 0.75f };
   renderBookmarks(barPos, bookmarks);
-  renderClipBoxes(barPos, this->clips, video_duration_ms);
+  renderClipBoxes(barPos, this->clips, (int)totalDuration*1000);
 }
 
 void UIManager::renderBottomBar() {
@@ -293,9 +292,9 @@ void UIManager::renderMediaButtons() {
   static bool paused = false;
 
   if (paused) {
-    (*this->mediaPlayer).pause();
+    this->mediaPlayer->pause();
   } else {
-    (*this->mediaPlayer).play();
+    this->mediaPlayer->play();
   }
 
   const char* label = paused ? "Play" : "Pause";

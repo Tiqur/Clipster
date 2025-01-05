@@ -69,18 +69,20 @@ public:
   bool loadFile(const char* fileName);
   void play();
   void pause();
-  void seek(double targetTime, bool backward);
+  void seek(double targetTime);
   void syncMedia(double currentTime);
   // Temp, move to private after
   double playbackStartTime = 0.0;
   VideoFrame getVideoFrame();
   AudioFrame getAudioFrame();
   bool shouldRenderMedia();
+  bool isPaused();
   bool loadFile(char* fileName);
   void reset();
   std::vector<VideoFrame> videoBuffer;
   std::vector<AudioFrame> audioBuffer;
   double getProgress();
+  double getTotalDuration();
 
 };
 
