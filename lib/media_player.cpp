@@ -301,3 +301,14 @@ AudioFrame MediaPlayer::getAudioFrame() {
 bool MediaPlayer::shouldRenderMedia() {
   return this->shouldRenderFrame;
 }
+
+double MediaPlayer::getProgress() {
+  if (this->videoBuffer.size() == 0) {
+    return 0.0;
+  }
+  
+  double totalDuration = this->videoBuffer.back().pts - this->videoBuffer.front().pts;
+  double currentTime = this->videoBuffer[videoBufferIndex].pts - this->videoBuffer.front().pts;
+  
+  return std::max(0.0, std::min(100.0, (this->currentTime / totalDuration) * 100.0));
+}

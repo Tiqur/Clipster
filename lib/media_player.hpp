@@ -80,6 +80,7 @@ public:
   void reset();
   std::vector<VideoFrame> videoBuffer;
   std::vector<AudioFrame> audioBuffer;
+  double getProgress();
 
 };
 

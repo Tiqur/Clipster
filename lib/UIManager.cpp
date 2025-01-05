@@ -126,7 +126,9 @@ void UIManager::renderSeekBar() {
   ImVec2 barSize = ImVec2(-FLT_MIN, 20.0f);
   
   // Draw the progress bar
-  static float g_progress = 0.0f; 
+  static float g_progress = 0.0f;
+  g_progress = this->mediaPlayer->getProgress() / 100.0;
+
   ImGui::ProgressBar(g_progress, barSize, "");
   
   // Calculate bar width (accounting for padding)
@@ -311,4 +313,3 @@ void UIManager::renderMediaButtons() {
     paused = !paused;
   }
 }
-
