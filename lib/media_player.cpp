@@ -236,3 +236,60 @@ void MediaPlayer::seek(double targetTime, bool backward = false) {
     }
   }
 }
+
+void MediaPlayer::syncMedia(double currentTime) {
+  // Get current and elapsed time
+  double playbackTime = currentTime - this->playbackStartTime;
+
+  // Calculate timing based on video and audio
+  double videoPts = this->videoBuffer[0].pts;
+  double audioPts = this->audioBuffer[0].pts;
+
+  // Audio and video synchronization tolerance
+  const double syncTolerance = 0.05; // 50ms
+  bool audioVideoInSync = std::abs(videoPts - audioPts) < syncTolerance;
+
+
+  // Seek if audio / video not in sync
+  if (!audioVideoInSync && !this->videoBuffer.empty() && !this->audioBuffer.empty()) {
+    if (videoPts > audioPts) {
+      double seekTime = audioPts - syncTolerance;
+      this->seek(seekTime, true);
+    }
+    else {
+      double seekTime = videoPts + syncTolerance;
+      this->seek(seekTime, false);
+    }
+
+    this->audioBufferIndex = 0;
+    this->videoBufferIndex = 0;
+  } else if (audioVideoInSync && !this->videoBuffer.empty() && !this->audioBuffer.empty()) {
+
+    // Render video
+    VideoFrame frame = this->videoBuffer[this->videoBufferIndex];
+
+    // Determine if should render frame using elapsed time
+    this->shouldRenderFrame = (frame.pts <= playbackTime) || (this->videoBufferIndex == 0);
+
+
+    if (this->shouldRenderFrame) {
+      lastFrameTime = currentTime;
+      this->videoBufferIndex++;
+      this->audioBufferIndex++;
+    }
+  } else {
+    std::cout << "Audio and video are out of sync but no seek triggered." << std::endl;
+  }
+}
+
+VideoFrame MediaPlayer::getVideoFrame() {
+  return this->videoBuffer[this->videoBufferIndex];
+}
+
+AudioFrame MediaPlayer::getAudioFrame() {
+  return this->audioBuffer[this->audioBufferIndex];
+}
+
+bool MediaPlayer::shouldRenderMedia() {
+  return this->shouldRenderFrame;
+}

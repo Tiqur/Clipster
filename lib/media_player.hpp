@@ -31,7 +31,6 @@ struct VideoFrame {
 
 class MediaPlayer {
 private:
-  unsigned int currentTime;
   AVFormatContext* pFormatContext = nullptr;
   AVCodecContext* videoCodecContext = nullptr;
   AVCodecContext* audioCodecContext = nullptr;
@@ -46,6 +45,14 @@ private:
   AVPacket* packet = nullptr; // Reused for both video and audio
   AVFrame* videoFrame = nullptr;
   AVFrame* audioFrame = nullptr;
+  void processVideoFrame(AVFrame* frame);
+  void processAudioFrame(AVFrame* frame);
+  void renderVideo();
+  void playAudio();
+  double lastFrameTime = 0.0;
+  int audioBufferIndex = 0;
+  int videoBufferIndex = 0;
+  bool shouldRenderFrame;
 
   // For synchronization between threads
   std::mutex videoMutex;
@@ -58,12 +65,15 @@ public:
   MediaPlayer();
   ~MediaPlayer();
   bool loadFile(const char* fileName);
-  void processVideoFrame(AVFrame* frame);
-  void processAudioFrame(AVFrame* frame);
   void play();
   void pause();
   void seek(double targetTime, bool backward);
-
+  void syncMedia(double currentTime);
+  // Temp, move to private after
+  double playbackStartTime = 0.0;
+  VideoFrame getVideoFrame();
+  AudioFrame getAudioFrame();
+  bool shouldRenderMedia();
   bool loadFile(char* fileName);
   void reset();
   std::vector<VideoFrame> videoBuffer;

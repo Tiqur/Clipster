@@ -122,7 +122,6 @@ class Rewind {
       glBindVertexArray(0);
 
 
-
       // Generate textures
       GLuint textureY, textureU, textureV;
       glGenTextures(1, &textureY);
@@ -155,16 +154,12 @@ class Rewind {
 
       // Register the framebuffer size callback
       glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-
-      int audioBufferIndex = 0;
-      int videoBufferIndex = 0;
       int width, height, sideBarWidth, bottomBarHeight;
 
       UIManager ui;
       ui.init(&width, &height, window, "#version 330", &this->screen_aspect_ratio);
 
-      double playbackStartTime = glfwGetTime();
-      double lastFrameTime = 0;
+      mp.playbackStartTime = glfwGetTime();
 
       // Main render loop
       while (!glfwWindowShouldClose(window)) {
@@ -176,68 +171,31 @@ class Rewind {
           glClear(GL_COLOR_BUFFER_BIT);
           glUseProgram(shaderProgram);
 
-          // Get current and elapsed time
-          double currentTime = glfwGetTime();
-          double playbackTime = currentTime - playbackStartTime;
+          // Sync media
+          mp.syncMedia(glfwGetTime());
 
-          // Calculate timing based on video and audio
-          double videoPts = mp.videoBuffer[0].pts;
-          double audioPts = mp.audioBuffer[0].pts;
+          // Play next available video and audio frame
+          if (mp.shouldRenderMedia()) {
+            VideoFrame vFrame = mp.getVideoFrame();
+            AudioFrame aFrame = mp.getAudioFrame();
 
-          // Audio and video synchronization tolerance
-          const double syncTolerance = 0.05; // 50ms
-          bool audioVideoInSync = std::abs(videoPts - audioPts) < syncTolerance;
+            // Generate texture from frame
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, textureY);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width, vFrame.height, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[0]);
+            glUniform1i(glGetUniformLocation(shaderProgram, "textureY"), 0);
 
-          // Seek if audio / video not in sync
-          if (!audioVideoInSync && !mp.videoBuffer.empty() && !mp.audioBuffer.empty()) {
-            if (videoPts > audioPts) {
-              double seekTime = audioPts - syncTolerance;
-              mp.seek(seekTime, true);
-            }
-            else {
-              double seekTime = videoPts + syncTolerance;
-              mp.seek(seekTime, false);
-            }
+            // Bind and update U plane texture
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, textureU);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width / 2, vFrame.height / 2, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[1]);
+            glUniform1i(glGetUniformLocation(shaderProgram, "textureU"), 1);
 
-            audioBufferIndex = 0;
-            videoBufferIndex = 0;
-          } else if (audioVideoInSync && !mp.videoBuffer.empty() && !mp.audioBuffer.empty()) {
-
-            // Render video
-            VideoFrame frame = mp.videoBuffer[videoBufferIndex];
-
-            // Determine if should render frame using elapsed time
-            bool shouldRenderFrame = (frame.pts <= playbackTime) || (videoBufferIndex == 0);
-
-            if (shouldRenderFrame) {
-              // Generate texture from frame
-              glActiveTexture(GL_TEXTURE0);
-              glBindTexture(GL_TEXTURE_2D, textureY);
-              glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame.width, frame.height, GL_RED, GL_UNSIGNED_BYTE, frame.data[0]);
-              glUniform1i(glGetUniformLocation(shaderProgram, "textureY"), 0);
-
-              // Bind and update U plane texture
-              glActiveTexture(GL_TEXTURE1);
-              glBindTexture(GL_TEXTURE_2D, textureU);
-              glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame.width / 2, frame.height / 2, GL_RED, GL_UNSIGNED_BYTE, frame.data[1]);
-              glUniform1i(glGetUniformLocation(shaderProgram, "textureU"), 1);
-
-              // Bind and update V plane texture
-              glActiveTexture(GL_TEXTURE2);
-              glBindTexture(GL_TEXTURE_2D, textureV);
-              glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame.width / 2, frame.height / 2, GL_RED, GL_UNSIGNED_BYTE, frame.data[2]);
-              glUniform1i(glGetUniformLocation(shaderProgram, "textureV"), 2);
-
-              // Play audio
-              AudioFrame audioFrame = mp.audioBuffer[audioBufferIndex];
-              //playAudio(audioFrame);
-
-              audioBufferIndex++;
-              videoBufferIndex++;
-              lastFrameTime = currentTime;
-            }
-          } else {
-            std::cout << "Audio and video are out of sync but no seek triggered." << std::endl;
+            // Bind and update V plane texture
+            glActiveTexture(GL_TEXTURE2);
+            glBindTexture(GL_TEXTURE_2D, textureV);
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width / 2, vFrame.height / 2, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[2]);
+            glUniform1i(glGetUniformLocation(shaderProgram, "textureV"), 2);
           }
 
           glBindVertexArray(VAO);
