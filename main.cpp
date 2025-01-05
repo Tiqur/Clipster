@@ -207,7 +207,7 @@ class Rewind {
             VideoFrame frame = mp.videoBuffer[videoBufferIndex];
 
             // Determine if should render frame using elapsed time
-            bool shouldRenderFrame = frame.pts <= playbackTime;
+            bool shouldRenderFrame = (frame.pts <= playbackTime) || (videoBufferIndex == 0);
 
             if (shouldRenderFrame) {
               // Generate texture from frame
