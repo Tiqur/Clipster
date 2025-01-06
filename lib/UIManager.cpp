@@ -99,21 +99,22 @@ void UIManager::renderSideBar() {
   ImGui::Text("Clips");
   ImGui::SeparatorText("Clips");
 
-  //if (ImGui::Button("Create Clip")) {
-  //  std::cout << "[INFO]: Create Clip" << std::endl;
-  //  this->clips.push_back(Clip(0, 10, "Clip"));
-  //}
+  if (ImGui::Button("Create Clip")) {
+    std::cout << "[INFO]: Create Clip" << std::endl;
+    this->clips.push_back(Clip(0, 10, "Clip"));
+  }
 
-  //for (int i = 0; i < clips.size(); i++) {
-  //  Clip c = clips[i];
+  for (int i = 0; i < this->clips.size(); i++) {
+    Clip c = this->clips[i];
 
-  //  ImGui::InputText(("##ClipName" + std::to_string(i)).c_str(), c.name, c.buffer_size);
+    ImGui::InputText(("##ClipName" + std::to_string(i)).c_str(), c.name, c.buffer_size);
 
-  //  ImGui::SameLine(); 
-  //  if (ImGui::Button(("Delete##" + std::to_string(i)).c_str())) {
-  //    clips.erase(clips.begin() + i);
-  //    break;
-  //  }
+    ImGui::SameLine(); 
+    if (ImGui::Button(("Delete##" + std::to_string(i)).c_str())) {
+      clips.erase(this->clips.begin() + i);
+      break;
+    }
+  }
   ImGui::End();
 }
 
