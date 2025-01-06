@@ -121,6 +121,37 @@ void UIManager::renderSideBar() {
   ImGui::End();
 }
 
+void UIManager::renderClipCreator(ImVec2 barPos) {
+  // Draw handles
+  ImDrawList* draw_list = ImGui::GetWindowDrawList();
+  ImVec2 barSize = ImGui::GetItemRectSize();
+
+  float triangleHeight = barSize.y*0.6;
+  float triangleWidth = triangleHeight*1.4;
+
+  float xPos1 = barPos.x+barSize.x*0.4;
+  float xPos2 = barPos.x+barSize.x*0.6;
+
+  ImVec2 p1(xPos1, barPos.y + barSize.y);
+  ImVec2 p2(xPos1 - triangleWidth * 0.5f, barPos.y + barSize.y + triangleHeight);
+  ImVec2 p3(xPos1 + triangleWidth * 0.5f, barPos.y + barSize.y + triangleHeight);
+
+  ImVec2 p4(xPos2, barPos.y + barSize.y);
+  ImVec2 p5(xPos2 - triangleWidth * 0.5f, barPos.y + barSize.y + triangleHeight);
+  ImVec2 p6(xPos2 + triangleWidth * 0.5f, barPos.y + barSize.y + triangleHeight);
+
+  ImU32 color = IM_COL32(255, 255, 0, 255);
+
+  draw_list->AddTriangleFilled(p1, p2, p3, color);
+  draw_list->AddTriangleFilled(p4, p5, p6, color);
+
+
+  // Draw highlighted region
+  //draw_list->AddRectFilled(ImVec2(xPos1, barSize.y), ImVec2(xPos2, 0), color);
+}
+
+
+
 void UIManager::renderSeekBar() {
   static bool g_seeking = false;
   ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));
@@ -169,6 +200,8 @@ void UIManager::renderSeekBar() {
 
   // TODO: Convert timestamp to percent
   std::vector<float> bookmarks = { 0.25f, 0.5f, 0.75f };
+
+  renderClipCreator(barPos);
   renderBookmarks(barPos, bookmarks);
   renderClipBoxes(barPos, this->clips, totalDuration);
 

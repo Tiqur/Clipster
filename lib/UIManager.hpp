@@ -79,6 +79,7 @@ private:
   void renderBookmarks(ImVec2 barPos, std::vector<float> bookmarks);
   void renderClipBoxes(ImVec2 bar_position, std::vector<Clip>& clips, double video_duration);
   void renderMediaButtons();
+  void renderClipCreator(ImVec2 barPos);
 
 
 public:
