@@ -67,7 +67,7 @@ void MediaPlayer::reset() {
   this->audioCodecContext = nullptr;
 }
 
-bool MediaPlayer::loadFile(const char* fileName) {
+bool MediaPlayer::loadFile(const std::string fileName) {
   reset();
 
   this->fileName = fileName;
@@ -76,7 +76,7 @@ bool MediaPlayer::loadFile(const char* fileName) {
   this->pFormatContext = avformat_alloc_context();
 
   // Read header info int pFormatContext
-  avformat_open_input(&pFormatContext, this->fileName, NULL, NULL);
+  avformat_open_input(&pFormatContext, this->fileName.c_str(), NULL, NULL);
 
   // Initialize streams
   if (!this->initializeStreams()) {

@@ -34,7 +34,7 @@ private:
   AVFormatContext* pFormatContext = nullptr;
   AVCodecContext* videoCodecContext = nullptr;
   AVCodecContext* audioCodecContext = nullptr;
-  const char* fileName = nullptr;
+  std::string fileName;
   bool initializeStreams();
   int videoStreamIndex = -1;
   int audioStreamIndex = -1;
@@ -66,7 +66,7 @@ private:
 public:
   MediaPlayer();
   ~MediaPlayer();
-  bool loadFile(const char* fileName);
+  bool loadFile(const std::string fileName);
   void play();
   void pause();
   void seek(double targetTime);
@@ -77,7 +77,6 @@ public:
   AudioFrame getAudioFrame();
   bool shouldRenderMedia();
   bool isPaused();
-  bool loadFile(char* fileName);
   void reset();
   std::vector<VideoFrame> videoBuffer;
   std::vector<AudioFrame> audioBuffer;

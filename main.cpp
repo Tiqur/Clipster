@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cstring>
 #include <thread>
+#include <string>
 
 
 namespace Config {
@@ -22,7 +23,7 @@ namespace Config {
 
 class Rewind {
   public:
-    const char* filename = "output.mp4";
+    const std::string filename = "output.mp4";
     int frame_width = 0;
     int frame_height = 0;
     unsigned char* frame_data = nullptr;
