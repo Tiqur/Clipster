@@ -185,9 +185,9 @@ void UIManager::renderSeekBar() {
 }
 
 void UIManager::renderBottomBar() {
-  this->bottomBarHeight = (int)std::min(std::max(*this->windowHeight*0.25, 100.0), 200.0);
+  this->bottomBarHeight = (int)std::min(std::max(*this->windowHeight*0.25, 100.0), 200.0)-this->toolBarHeight;
   this->bottomBarWidth = *this->windowWidth-this->sideBarWidth;
-  ImGui::SetNextWindowPos(ImVec2(this->sideBarWidth, *this->windowHeight-this->bottomBarHeight-this->toolBarHeight));
+  ImGui::SetNextWindowPos(ImVec2(this->sideBarWidth, *this->windowHeight-this->bottomBarHeight));
   ImGui::SetNextWindowSize(ImVec2(this->bottomBarWidth, this->bottomBarHeight));
   ImGui::Begin("Bottom Bar", &this->p_open, this->bottomBarWindowFlags);
 
@@ -301,6 +301,10 @@ void UIManager::renderBookmarks(ImVec2 barPos, std::vector<float> bookmarks) {
   }
 }
 
+
+int UIManager::getToolBarHeight() {
+  return this->toolBarHeight;
+}
 
 void UIManager::renderMediaButtons() {
   static bool paused = false;

@@ -206,7 +206,7 @@ class Rewind {
           handleInput(window);
 
           // Render Toolbar
-          int toolBarHeight;
+          int toolBarHeight = ui.getToolBarHeight();
 
           // Edit vertices
           bottomBarHeight = (int)std::min(std::max(height*0.25, 100.0), 200.0);

@@ -91,6 +91,7 @@ public:
   bool init(MediaPlayer* mediaPlayer, int* windowWidth, int* windowHeight, GLFWwindow* window, char* openglVersion, float* videoAspectRatio);
   void setDebug(bool b);
   void render();
+  int getToolBarHeight();
 };
 
 #endif // UIMANAGER_HPP
