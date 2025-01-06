@@ -101,13 +101,16 @@ void UIManager::renderSideBar() {
 
   if (ImGui::Button("Create Clip")) {
     std::cout << "[INFO]: Create Clip" << std::endl;
-    this->clips.push_back(Clip(0, 10, "Clip"));
+    double currentPts = this->mediaPlayer->getVideoFrame().pts;
+    double clipEndPts = std::min(currentPts+this->mediaPlayer->getTotalDuration()*0.01, this->mediaPlayer->getTotalDuration());
+    this->clips.push_back(Clip(currentPts, clipEndPts, "Clip"));
   }
 
   for (int i = 0; i < this->clips.size(); i++) {
     Clip c = this->clips[i];
 
     ImGui::InputText(("##ClipName" + std::to_string(i)).c_str(), c.name, c.buffer_size);
+    //ImGui::InputDouble(("##PTS" + std::to_string(i)).c_str(), &c.time_start, c.buffer_size);
 
     ImGui::SameLine(); 
     if (ImGui::Button(("Delete##" + std::to_string(i)).c_str())) {
@@ -167,7 +170,7 @@ void UIManager::renderSeekBar() {
   // TODO: Convert timestamp to percent
   std::vector<float> bookmarks = { 0.25f, 0.5f, 0.75f };
   renderBookmarks(barPos, bookmarks);
-  renderClipBoxes(barPos, this->clips, (int)totalDuration*1000);
+  renderClipBoxes(barPos, this->clips, totalDuration);
 
   // TODO: Move to helper function
   double currentFrameTime = mediaPlayer->getVideoFrame().pts;
@@ -215,7 +218,7 @@ void UIManager::renderSeekPreview(int seekBarYPos) {
 }
 
 
-void UIManager::renderClipBoxes(ImVec2 bar_position, std::vector<Clip>& clips, int video_duration_ms) {
+void UIManager::renderClipBoxes(ImVec2 bar_position, std::vector<Clip>& clips, double video_duration) {
     static int dragging_handle = -1;
     static int active_clip_index = -1;
     
@@ -231,8 +234,8 @@ void UIManager::renderClipBoxes(ImVec2 bar_position, std::vector<Clip>& clips, i
     
     for (int i = 0; i < clips.size(); i++) {
         Clip& clip = clips[i];
-        float x_position_start = bar_position.x + ((float)clip.time_start / video_duration_ms) * bar_size.x;
-        float x_position_end = bar_position.x + ((float)clip.time_end / video_duration_ms) * bar_size.x;
+        double x_position_start = bar_position.x + ((double)clip.time_start / video_duration) * bar_size.x;
+        double x_position_end = bar_position.x + ((double)clip.time_end / video_duration) * bar_size.x;
         
         ImVec2 top_left = ImVec2(x_position_start, bar_position.y);
         ImVec2 bottom_right = ImVec2(x_position_end, bar_position.y + bar_size.y);
@@ -241,8 +244,8 @@ void UIManager::renderClipBoxes(ImVec2 bar_position, std::vector<Clip>& clips, i
         ImGui::GetWindowDrawList()->AddRectFilled(top_left, bottom_right, IM_COL32(0, 255, 0, 50));
         
         // Handle config
-        float handle_h_padding = 3.0f;
-        float handle_v_padding = 1.0f;
+        double handle_h_padding = 3.0f;
+        double handle_v_padding = 1.0f;
         auto handle_color = IM_COL32(0, 255, 0, 255);
         
         ImVec2 left_handle_min(x_position_start - handle_h_padding, bar_position.y - handle_v_padding);
@@ -272,10 +275,10 @@ void UIManager::renderClipBoxes(ImVec2 bar_position, std::vector<Clip>& clips, i
         
         // Handle dragging
         if (mouse_down && active_clip_index == i && dragging_handle != -1) {
-            float relative_x = (mouse_pos.x - bar_position.x) / bar_size.x;
-            int new_time = relative_x * video_duration_ms;
+            double relative_x = (mouse_pos.x - bar_position.x) / bar_size.x;
+            double new_time = relative_x * video_duration;
             
-            new_time = std::min(std::max(new_time, 0), video_duration_ms);
+            new_time = std::min(std::max(new_time, 0.0), video_duration);
             
             if (dragging_handle == 0) {
                 // Left handle - update start time

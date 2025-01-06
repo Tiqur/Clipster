@@ -23,12 +23,12 @@ static void HelpMarker(const char* desc)
 
 class Clip {
 public:
-  int time_start;
-  int time_end;
+  double time_start;
+  double time_end;
   int buffer_size = 256;
   char* name = new char[this->buffer_size];
 
-  Clip(int time_start, int time_end, char* name) {
+  Clip(double time_start, double time_end, char* name) {
     this->time_start = time_start;
     this->time_end = time_end;
     this->setName(name);
@@ -62,11 +62,7 @@ private:
   bool debug = false;
   int* windowHeight;
   int* windowWidth;
-  std::vector<Clip> clips = { 
-      Clip(0, 150, "Clip 1"), 
-      Clip(200, 300, "Clip 2"), 
-      Clip(400, 800, "Clip 3")
-  };
+  std::vector<Clip> clips;
 
   int toolBarHeight;
   int sideBarWidth;
@@ -81,7 +77,7 @@ private:
   void renderSeekBar();
   void renderSeekPreview(int seekBarYPos);
   void renderBookmarks(ImVec2 barPos, std::vector<float> bookmarks);
-  void renderClipBoxes(ImVec2 bar_position, std::vector<Clip>& clips, int video_duration_ms);
+  void renderClipBoxes(ImVec2 bar_position, std::vector<Clip>& clips, double video_duration);
   void renderMediaButtons();
 
 
