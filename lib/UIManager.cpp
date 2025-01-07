@@ -170,7 +170,7 @@ void UIManager::renderSeekBar() {
   // Pre-calculate target time in case of seek
   double totalDuration = this->mediaPlayer->getTotalDuration();
   double relative_x = std::min(std::max((mousePos.x - barPos.x) / barWidth, 0.0), barWidth);
-  double targetTime = std::min(totalDuration, std::max(relative_x * totalDuration, 0.0));
+  double targetTime = this->findNearestPts(relative_x * totalDuration);
 
   // Draw the progress bar
   static float g_progress = 0.0f;
@@ -310,6 +310,11 @@ void UIManager::renderClipBoxes(ImVec2 bar_position, std::vector<Clip>& clips, d
         if (mouse_down && active_clip_index == i && dragging_handle != -1) {
             double relative_x = (mouse_pos.x - bar_position.x) / bar_size.x;
             double new_time = relative_x * video_duration;
+
+            // Snap to nearest pts
+            std::cout << new_time << std::endl;
+            new_time = this->findNearestPts(new_time);
+            std::cout << new_time << std::endl;
             
             new_time = std::min(std::max(new_time, 0.0), video_duration);
             
@@ -322,6 +327,33 @@ void UIManager::renderClipBoxes(ImVec2 bar_position, std::vector<Clip>& clips, d
             }
         }
     }
+}
+
+double UIManager::findNearestPts(double x) {
+  std::vector<VideoFrame> arr = this->mediaPlayer->videoBuffer;
+  int left = 0, right = arr.size() - 1;
+  double closest = INT_MAX;
+  double closestDiff = INT_MAX;
+
+  while (left <= right) {
+    int mid = left + (right - left) / 2;
+
+    double diff = std::abs(arr[mid].pts - x);
+    if (diff < closestDiff || (diff == closestDiff && arr[mid].pts < closest)) {
+      closest = arr[mid].pts;
+      closestDiff = diff;
+    }
+
+    if (arr[mid].pts == x) {
+      return arr[mid].pts;
+    } else if (arr[mid].pts < x) {
+      left = mid + 1;
+    } else {
+      right = mid - 1;
+    }
+  }
+
+  return closest;
 }
 
 void UIManager::renderVideoPlayer() {

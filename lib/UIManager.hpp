@@ -10,14 +10,14 @@
 
 static void HelpMarker(const char* desc)
 {
-    ImGui::TextDisabled("(?)");
-    if (ImGui::BeginItemTooltip())
-    {
-        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-        ImGui::TextUnformatted(desc);
-        ImGui::PopTextWrapPos();
-        ImGui::EndTooltip();
-    }
+  ImGui::TextDisabled("(?)");
+  if (ImGui::BeginItemTooltip())
+  {
+    ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+    ImGui::TextUnformatted(desc);
+    ImGui::PopTextWrapPos();
+    ImGui::EndTooltip();
+  }
 }
 
 
@@ -79,6 +79,7 @@ private:
   void renderBookmarks(ImVec2 barPos, std::vector<float> bookmarks);
   void renderClipBoxes(ImVec2 bar_position, std::vector<Clip>& clips, double video_duration);
   void renderMediaButtons();
+  double findNearestPts(double x);
   void renderClipCreator(ImVec2 barPos);
 
 
