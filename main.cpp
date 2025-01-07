@@ -160,8 +160,6 @@ class Rewind {
       UIManager ui;
       ui.init(&mp, &width, &height, window, "#version 330", &this->screen_aspect_ratio);
 
-      mp.playbackStartTime = glfwGetTime();
-
       // Main render loop
       while (!glfwWindowShouldClose(window)) {
           glfwGetWindowSize(window, &width, &height);

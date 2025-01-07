@@ -278,10 +278,6 @@ AudioFrame MediaPlayer::getAudioFrame() {
   return this->audioBuffer[this->audioBufferIndex];
 }
 
-bool MediaPlayer::shouldRenderMedia() {
-  return this->shouldRenderFrame;
-}
-
 double MediaPlayer::getTotalDuration() {
   return this->videoBuffer.back().pts - this->videoBuffer.front().pts;
 }

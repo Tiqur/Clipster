@@ -55,6 +55,7 @@ private:
   bool shouldRenderFrame;
   bool paused = false;
   double currentTime = 0.0;
+  double playbackStartTime = 0.0;
 
   // For synchronization between threads
   std::mutex videoMutex;
@@ -71,11 +72,8 @@ public:
   void pause();
   void seek(double targetTime);
   void syncMedia(double currentTime);
-  // Temp, move to private after
-  double playbackStartTime = 0.0;
   VideoFrame getVideoFrame();
   AudioFrame getAudioFrame();
-  bool shouldRenderMedia();
   bool isPaused();
   void reset();
   std::vector<VideoFrame> videoBuffer;
