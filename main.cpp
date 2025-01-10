@@ -23,7 +23,7 @@ namespace Config {
 
 class Rewind {
   public:
-    const std::string filename = "output.mp4";
+    const std::string filename = "video.mp4";
     int frame_width = 0;
     int frame_height = 0;
     unsigned char* frame_data = nullptr;
@@ -37,8 +37,8 @@ class Rewind {
     int run() {
       MediaPlayer mp;
       mp.loadFile(this->filename);
-      VideoFrame firstFrame = mp.videoBuffer[0];
-      std::cout << firstFrame.width << std::endl;
+      VideoFrame firstFrame = mp.videoFrameCache[0];
+      std::cout << "First frame width: " << firstFrame.width << std::endl;
       this->frame_width = firstFrame.width;
       this->frame_height = firstFrame.height;
 
@@ -180,19 +180,19 @@ class Rewind {
           // Generate texture from frame
           glActiveTexture(GL_TEXTURE0);
           glBindTexture(GL_TEXTURE_2D, textureY);
-          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width, vFrame.height, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[0]);
+          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width, vFrame.height, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[0].data());
           glUniform1i(glGetUniformLocation(shaderProgram, "textureY"), 0);
 
           // Bind and update U plane texture
           glActiveTexture(GL_TEXTURE1);
           glBindTexture(GL_TEXTURE_2D, textureU);
-          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width / 2, vFrame.height / 2, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[1]);
+          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width / 2, vFrame.height / 2, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[1].data());
           glUniform1i(glGetUniformLocation(shaderProgram, "textureU"), 1);
 
           // Bind and update V plane texture
           glActiveTexture(GL_TEXTURE2);
           glBindTexture(GL_TEXTURE_2D, textureV);
-          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width / 2, vFrame.height / 2, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[2]);
+          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, vFrame.width / 2, vFrame.height / 2, GL_RED, GL_UNSIGNED_BYTE, vFrame.data[2].data());
           glUniform1i(glGetUniformLocation(shaderProgram, "textureV"), 2);
 
           glBindVertexArray(VAO);

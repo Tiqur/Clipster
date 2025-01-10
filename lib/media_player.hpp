@@ -4,7 +4,9 @@
 #include <string>
 #include <mutex>
 #include <queue>
+#include <memory>
 #include <condition_variable>
+#include <vector>
 
 extern "C"
 {
@@ -15,18 +17,35 @@ extern "C"
 #include <libswscale/swscale.h>
 }
 
-struct AudioFrame {
-    uint8_t* data;
-    int size;
-    double pts;
+struct VideoFrame {
+  std::vector<uint8_t> data[3];
+  int linesize[3];
+  int width;
+  int height;
+  double pts;
+
+  VideoFrame() {
+    width = 0;
+    height = 0;
+    pts = 0.0;
+
+    for (int i = 0; i < 3; i++) {
+      data[i].clear();
+      linesize[i] = 0;
+    }
+  }
 };
 
-struct VideoFrame {
-    uint8_t* data[3];
-    int linesize[3];
-    int width;
-    int height;
-    double pts;
+struct AudioFrame {
+  std::vector<uint8_t> data;
+  int size;
+  double pts;
+
+  AudioFrame() {
+    data.clear();
+    size = 0;
+    pts = 0.0;
+  }
 };
 
 class MediaPlayer {
@@ -45,23 +64,26 @@ private:
   AVPacket* packet = nullptr; // Reused for both video and audio
   AVFrame* videoFrame = nullptr;
   AVFrame* audioFrame = nullptr;
-  void processVideoFrame(AVFrame* frame);
-  void processAudioFrame(AVFrame* frame);
+  VideoFrame processVideoFrame(AVFrame* frame);
+  AudioFrame processAudioFrame(AVFrame* frame);
   void renderVideo();
   void playAudio();
   double lastFrameTime = 0.0;
-  int audioBufferIndex = 0;
-  int videoBufferIndex = 0;
+  const int cacheSize = 64;
+
+  // Holds value of current pts
+  int currentPtsInVideoBuffer = 0;
+  int currentPtsInAudioBuffer = 0;
+
+  // Cycles through cache size
+  int audioCacheIndex = 0;
+  int videoCacheIndex = 0;
+
   bool shouldRenderFrame;
   bool paused = false;
   double currentTime = 0.0;
   double playbackStartTime = 0.0;
-
-  // For synchronization between threads
-  std::mutex videoMutex;
-  std::mutex audioMutex;
-  std::condition_variable cvVideo;
-  std::condition_variable cvAudio;
+  void fillCacheFromPTS(double targetPTS, size_t frameCount);
 
 
 public:
@@ -76,10 +98,12 @@ public:
   AudioFrame getAudioFrame();
   bool isPaused();
   void reset();
-  std::vector<VideoFrame> videoBuffer;
-  std::vector<AudioFrame> audioBuffer;
+  std::vector<VideoFrame> videoFrameCache;
+  std::vector<AudioFrame> audioFrameCache;
   double getProgress();
   double getTotalDuration();
+  std::vector<double> videoPtsBuffer;
+  std::vector<double> audioPtsBuffer;
 
 };
 

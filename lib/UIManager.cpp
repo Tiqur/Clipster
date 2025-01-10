@@ -330,7 +330,7 @@ void UIManager::renderClipBoxes(ImVec2 bar_position, std::vector<Clip>& clips, d
 }
 
 double UIManager::findNearestPts(double x) {
-  std::vector<VideoFrame> arr = this->mediaPlayer->videoBuffer;
+  std::vector<double> arr = this->mediaPlayer->videoPtsBuffer;
   int left = 0, right = arr.size() - 1;
   double closest = INT_MAX;
   double closestDiff = INT_MAX;
@@ -338,15 +338,15 @@ double UIManager::findNearestPts(double x) {
   while (left <= right) {
     int mid = left + (right - left) / 2;
 
-    double diff = std::abs(arr[mid].pts - x);
-    if (diff < closestDiff || (diff == closestDiff && arr[mid].pts < closest)) {
-      closest = arr[mid].pts;
+    double diff = std::abs(arr[mid] - x);
+    if (diff < closestDiff || (diff == closestDiff && arr[mid] < closest)) {
+      closest = arr[mid];
       closestDiff = diff;
     }
 
-    if (arr[mid].pts == x) {
-      return arr[mid].pts;
-    } else if (arr[mid].pts < x) {
+    if (arr[mid] == x) {
+      return arr[mid];
+    } else if (arr[mid] < x) {
       left = mid + 1;
     } else {
       right = mid - 1;

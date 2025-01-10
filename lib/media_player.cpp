@@ -130,8 +130,7 @@ bool MediaPlayer::loadFile(const std::string fileName) {
         return false;
       }
 
-      // Process and push to videoBuffer
-      processVideoFrame(this->videoFrame);
+      this->videoPtsBuffer.push_back(this->videoFrame->pts * av_q2d(this->pFormatContext->streams[this->videoStreamIndex]->time_base));
 
     } else if (this->packet->stream_index == this->audioStreamIndex) {
 
@@ -151,40 +150,56 @@ bool MediaPlayer::loadFile(const std::string fileName) {
         return false;
       }
 
-      // Process and push to audioBuffer
-      processAudioFrame(this->audioFrame);
+      this->audioPtsBuffer.push_back(this->audioFrame->pts);
+
     } else {
       std::cout << "Unsupported stream type for packet" << std::endl;
       continue;
     }
   }
 
-  std::cout << "Video queue size: " << this->videoBuffer.size() << std::endl;
-  std::cout << "Audio queue size: " << this->audioBuffer.size() << std::endl;
+  //std::cout << "Video queue size: " << this->videoBuffer.size() << std::endl;
+  //std::cout << "Audio queue size: " << this->audioBuffer.size() << std::endl;
+  std::cout << "Video Pts: " << this->videoPtsBuffer.size() << std::endl;
+  std::cout << "Audio Pts: " << this->audioPtsBuffer.size() << std::endl;
+  
+
+  // Fill cache with initial frames
+  this->fillCacheFromPTS(0, this->cacheSize);
+
+  //for (int i = 0; i < this->videoFrameCache.size(); i++)
+  //  std::cout << i << this->videoFrameCache[i].pts << ", ";
+  //std::cout << std::endl;
+
+  //this->fillCacheFromPTS(this->videoPtsBuffer[50], this->cacheSize);
+  //for (int i = 0; i < this->videoFrameCache.size(); i++)
+  //  std::cout << i << this->videoFrameCache[i].pts << ", ";
+  //std::cout << std::endl;
+
 
   return this->pFormatContext;
 }
 
-void MediaPlayer::processVideoFrame(AVFrame* frame) {
+VideoFrame MediaPlayer::processVideoFrame(AVFrame* frame) {
   VideoFrame vf;
   vf.width = frame->width;
   vf.height = frame->height;
 
-  // Copy pixel data for each plane
+  // Copy pixel data for each plane 
   for (int i = 0; i < 3; i++) {
     int size = frame->linesize[i] * (i == 0 ? frame->height : frame->height/2);
-    vf.data[i] = new uint8_t[size];
-    memcpy(vf.data[i], frame->data[i], size);
+    vf.data[i].resize(size);
+    memcpy(vf.data[i].data(), frame->data[i], size);
     vf.linesize[i] = frame->linesize[i];
   }
   
   AVStream* stream = this->pFormatContext->streams[this->videoStreamIndex];
   vf.pts = frame->pts * av_q2d(stream->time_base);
 
-  this->videoBuffer.push_back(vf);
+  return vf;
 }
 
-void MediaPlayer::processAudioFrame(AVFrame* frame) {
+AudioFrame MediaPlayer::processAudioFrame(AVFrame* frame) {
   AudioFrame af;
   //af.data = 
   //af.size = 
@@ -192,7 +207,7 @@ void MediaPlayer::processAudioFrame(AVFrame* frame) {
   AVStream* stream = this->pFormatContext->streams[this->audioStreamIndex];
   af.pts = frame->pts * av_q2d(stream->time_base);
 
-  this->audioBuffer.push_back(af);
+  return af;
 }
 
 void MediaPlayer::play() {
@@ -213,23 +228,24 @@ void MediaPlayer::pause() {
 void MediaPlayer::seek(double targetTime) {
 
   // Reset video frame index to closest
-  for (size_t i = 0; i < this->videoBuffer.size()-1; ++i) {
-    if (this->videoBuffer[i].pts >= targetTime) {
-      this->videoBufferIndex = i;
+  for (size_t i = 0; i < this->videoPtsBuffer.size()-1; ++i) {
+    if (this->videoPtsBuffer[i] >= targetTime) {
+      this->currentPtsInVideoBuffer = i;
       break;
     }
   }
 
   // Reset audio frame index to closest
-  for (size_t i = 0; i < this->audioBuffer.size()-1; ++i) {
-    if (this->audioBuffer[i].pts >= targetTime) {
-      this->audioBufferIndex = i;
+  for (size_t i = 0; i < this->audioPtsBuffer.size()-1; ++i) {
+    if (this->audioPtsBuffer[i] >= targetTime) {
+      this->currentPtsInAudioBuffer = i;
       break;
     }
   }
 
   this->lastFrameTime = this->currentTime;
   this->playbackStartTime = this->currentTime - targetTime;
+  this->fillCacheFromPTS(this->videoPtsBuffer[this->currentPtsInVideoBuffer], this->cacheSize);
 }
 
 void MediaPlayer::syncMedia(double currentTime) {
@@ -239,47 +255,161 @@ void MediaPlayer::syncMedia(double currentTime) {
   double playbackTime = this->currentTime - this->playbackStartTime;
 
   // Calculate timing based on video and audio
-  double videoPts = this->videoBuffer[0].pts;
-  double audioPts = this->audioBuffer[0].pts;
+  double videoPts = this->getVideoFrame().pts;
+  double audioPts = this->getAudioFrame().pts;
 
   // Audio and video synchronization tolerance
   const double syncTolerance = 0.05; // 50ms
   bool audioVideoInSync = std::abs(videoPts - audioPts) < syncTolerance;
 
+  //if (!audioVideoInSync)
+  //  this->seek(videoPts);
 
-  // Seek if audio / video not in sync
-  if (!audioVideoInSync && !this->videoBuffer.empty() && !this->audioBuffer.empty()) {
-    // TODO: Test if this works
-    this->seek(videoPts);
-  } else if (audioVideoInSync && !this->videoBuffer.empty() && !this->audioBuffer.empty()) {
+  // Determine if should render frame using elapsed time
+  VideoFrame frame = this->getVideoFrame();
+  this->shouldRenderFrame = ((frame.pts <= playbackTime) || (this->videoCacheIndex == 0)) && !this->paused;
 
-    // Render video
-    VideoFrame frame = this->videoBuffer[this->videoBufferIndex];
+  if (this->shouldRenderFrame) {
+    lastFrameTime = this->currentTime;
 
-    // Determine if should render frame using elapsed time
-    this->shouldRenderFrame = ((frame.pts <= playbackTime) || (this->videoBufferIndex == 0)) && !this->paused;
+    // TODO: double buffer cache and swap pointers for efficiency? (separate thread)
+    if ((float)this->videoCacheIndex >= this->cacheSize-1) {
+      std::cout << "Reached end of cache,  Refilling..." << std::endl;
 
+      size_t nextIndex = this->currentPtsInVideoBuffer + 1;
 
-    if (this->shouldRenderFrame) {
-      lastFrameTime = this->currentTime;
-      this->videoBufferIndex = std::max(0, std::min(this->videoBufferIndex+1, (int)this->videoBuffer.size()-1));
-      this->audioBufferIndex = std::max(0, std::min(this->audioBufferIndex+1, (int)this->audioBuffer.size()-1));
+      if (nextIndex >= this->videoPtsBuffer.size()) {
+          this->pause();
+          return;
+      }
+    
+      double startPTS = this->videoPtsBuffer[nextIndex];
+      this->fillCacheFromPTS(startPTS, this->cacheSize);
+      std::cout << "PTS index: " << this->currentPtsInVideoBuffer << std::endl;
+      std::cout << "PTS: " << this->videoPtsBuffer[this->currentPtsInVideoBuffer] << std::endl;
+      this->videoCacheIndex = 0;
+      this->audioCacheIndex = 0;
     }
-  } else {
-    std::cout << "Audio and video are out of sync but no seek triggered." << std::endl;
+
+
+    this->videoCacheIndex = std::clamp(this->videoCacheIndex+1, 0, std::min((int)this->videoFrameCache.size(), this->cacheSize)-1);
+    this->audioCacheIndex = std::clamp(this->audioCacheIndex+1, 0, std::min((int)this->audioFrameCache.size(), this->cacheSize)-1);
+    this->currentPtsInVideoBuffer = std::clamp(this->currentPtsInVideoBuffer+1, 0, (int)this->videoPtsBuffer.size()-1);
+    this->currentPtsInAudioBuffer = std::clamp(this->currentPtsInAudioBuffer+1, 0, (int)this->audioPtsBuffer.size()-1);
   }
 }
 
+void MediaPlayer::fillCacheFromPTS(double targetPTS, size_t frameCount) {
+  std::cout << "TargetPTS: " << targetPTS << std::endl;
+    
+    // Convert pts to the stream's timebase
+    AVRational time_base = this->pFormatContext->streams[videoStreamIndex]->time_base;
+    int64_t seekPTS = (int64_t)(targetPTS * time_base.den / time_base.num);
+
+    if (targetPTS > videoPtsBuffer.back() || targetPTS < videoPtsBuffer.front()) {
+        fprintf(stderr, "Invalid PTS value for seeking\n");
+        return;
+    }
+
+    // Seek to closest keyframe that is earlier than PTS
+    if (av_seek_frame(this->pFormatContext, videoStreamIndex, seekPTS, AVSEEK_FLAG_BACKWARD) < 0) {
+      fprintf(stderr, "Error while seeking.\n");
+      return;
+    }
+    
+    // Clear decoder buffers
+    avcodec_flush_buffers(this->videoCodecContext);
+    avcodec_flush_buffers(this->audioCodecContext);
+
+    // Clear Caches
+    for (auto& frame : videoFrameCache)
+      for (int i = 0; i < 3; i++)
+        frame.data[i].clear();
+
+    for (auto& frame : audioFrameCache)
+      frame.data.clear();
+
+    this->videoFrameCache.clear();
+    this->audioFrameCache.clear();
+    
+    AVPacket* packet = av_packet_alloc();
+    AVFrame* frame = av_frame_alloc();
+    if (!packet || !frame) {
+        fprintf(stderr, "Failed to allocate packet or frame.\n");
+        av_packet_free(&packet);
+        av_frame_free(&frame);
+        return;
+    }
+    
+    size_t framesFound = 0;
+    bool foundFirstFrame = false;
+    int ret;
+    
+
+    while (av_read_frame(this->pFormatContext, packet) >= 0) {
+      if (packet->stream_index == videoStreamIndex) {
+        ret = avcodec_send_packet(this->videoCodecContext, packet);
+        if (ret < 0) {
+          fprintf(stderr, "Error sending packet for decoding\n");
+          break;
+        }
+
+        while ((ret = avcodec_receive_frame(this->videoCodecContext, frame)) == 0) {
+          if (!foundFirstFrame && frame->best_effort_timestamp >= seekPTS) {
+            foundFirstFrame = true;
+          }
+
+          if (foundFirstFrame) {
+            VideoFrame vf = this->processVideoFrame(frame);
+            this->videoFrameCache.push_back(vf);
+            framesFound++;
+
+            if (framesFound >= frameCount) {
+              av_packet_unref(packet);
+              goto cleanup;  // Break out of both loops
+            }
+          }
+        }
+
+        if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF) {
+          fprintf(stderr, "Error receiving frame\n");
+          break;
+        }
+    } else if (packet->stream_index == audioStreamIndex) {
+        ret = avcodec_send_packet(this->audioCodecContext, packet);
+        if (ret < 0) {
+          fprintf(stderr, "Error sending audio packet for decoding\n");
+          break;
+        }
+
+        while ((ret = avcodec_receive_frame(this->audioCodecContext, frame)) == 0) {
+          AudioFrame af = this->processAudioFrame(frame);
+          this->audioFrameCache.push_back(af);
+        }
+
+        if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF) {
+          fprintf(stderr, "Error receiving audio frame\n");
+          break;
+        }
+      }
+      av_packet_unref(packet);
+    }
+
+cleanup:
+    av_packet_free(&packet);
+    av_frame_free(&frame);
+}
+
 VideoFrame MediaPlayer::getVideoFrame() {
-  return this->videoBuffer[this->videoBufferIndex];
+  return this->videoFrameCache[this->videoCacheIndex];
 }
 
 AudioFrame MediaPlayer::getAudioFrame() {
-  return this->audioBuffer[this->audioBufferIndex];
+  return this->audioFrameCache[this->audioCacheIndex];
 }
 
 double MediaPlayer::getTotalDuration() {
-  return this->videoBuffer.back().pts - this->videoBuffer.front().pts;
+  return this->videoPtsBuffer.back() - this->videoPtsBuffer.front();
 }
 
 bool MediaPlayer::isPaused() {
@@ -287,7 +417,7 @@ bool MediaPlayer::isPaused() {
 }
 
 double MediaPlayer::getProgress() {
-  if (this->videoBuffer.size() == 0) {
+  if (this->videoFrameCache.size() < 1) {
     return 0.0;
   }
   
